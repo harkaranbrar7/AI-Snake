@@ -55,6 +55,7 @@ def mainLoop():
 			#gameData.gScore vs previousScore
 		if gDebugging[0]:
 			print(gameData.getHeadLocation())
+			print(gameData.getHeadDirection())
 			print(gameData.getFoodLocation())
 			print(gameData.getTailListLocation())
 			print(gameData.getWallListLocation())

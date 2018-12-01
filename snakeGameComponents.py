@@ -267,6 +267,11 @@ class snakeGameComponents:
 		retLocation.append(self.gHead.location.x)
 		retLocation.append(self.gHead.location.y)
 		return retLocation
+	def getHeadDirection(self):
+		retDirection = []
+		retDirection.append(self.gHead.direction.x)
+		retDirection.append(self.gHead.direction.y)
+		return retDirection
 	def getFoodLocation(self):
 		retLocation = []
 		retLocation.append(self.gFood.location.x)
