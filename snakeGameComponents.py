@@ -26,20 +26,34 @@ class snakeHead:
 		self.location = inpLocation
 		self.direction = inpOrientation
 		self.dead = False
+	def copyObject(self):
+		retObject = snakeHead(self.location.copyNew(), self.direction.copyNew())
+		retObject.dead = self.dead
+		return retObject
 		
 class snakeTailJoint:
 	def __init__(self, inpLocation, inpOrientation):
 		self.location = inpLocation
 		self.direction = inpOrientation
+	def copyObject(self):
+		retObject = snakeTailJoint(self.location.copyNew(), self.direction.copyNew())
+		return retObject
 
 class food:
 	def __init__(self, inpLocation):
 		self.location = inpLocation
 		self.dead = False
+	def copyObject(self):
+		retObject = food(self.location.copyNew())
+		retObject.dead = self.dead
+		return retObject
 		
 class wall:
 	def __init__(self, inpLocation):
 		self.location = inpLocation
+	def copyObject(self):
+		retObject = wall(self.location.copyNew())
+		return retObject
 		
 class graphPoint:
 	def __init__(self):
@@ -47,6 +61,19 @@ class graphPoint:
 		self.food = False
 		self.tail = False
 		self.head = False
+	def copyObject(self):
+		retObject = graphPoint()
+		retObject.wall = self.wall
+		retObject.food = self.food
+		retObject.tail = self.tail
+		retObject.head = self.head
+		return retObject
+	def isHazard(self):
+		return (self.wall == True or self.tail == True)
+	def isReward(self):
+		return (self.food == True)
+	def isEmpty(self):
+		return (self.wall == False and self.food == False and self.tail == False and self.head == False)
 
 class snakeGameComponents:
 	gHead = None
@@ -96,7 +123,6 @@ class snakeGameComponents:
 			inpTailList[0].location.copyValue(inpHead.location)
 			inpTailList[0].direction.copyValue(inpHead.direction)
 
-	#I think objects are passed by reference
 	def moveSnake(self, inpTailList, inpHead, inpDirection, inpBounds):
 		self.moveTail (inpTailList, inpHead)
 		self.moveHead (inpHead, inpDirection, inpBounds)
@@ -123,11 +149,10 @@ class snakeGameComponents:
 		validLocationList = []
 		for i in range(len(inpGraph)):
 			for j in range(len(inpGraph[i])):
-				if inpGraph[i][j].food == False and inpGraph[i][j].wall == False and inpGraph[i][j].tail == False and inpGraph[i][j].head == False:
+				if inpGraph[i][j].isEmpty():
 					validLocationList.append(cartesianLocation(j,i))
 		return validLocationList
 		
-	#not done
 	def newFoodLocation(self, inpGraph):
 		validLocationList = self.findValidLocations(inpGraph)
 		foodLocation = None
@@ -136,7 +161,7 @@ class snakeGameComponents:
 		else:
 			foodLocation = cartesianLocation(0, 0)
 		return foodLocation
-	#not done
+
 	def eatFood(self, inpTailList, inpHead, inpFood, inpGraph):
 		self.growSnake(inpTailList, inpHead)
 		inpGraph[inpFood.location.y][inpFood.location.x].food = False
@@ -236,3 +261,52 @@ class snakeGameComponents:
 			self.gScore = self.increaseScore(self.gScore)
 		if(self.gHead.dead == True):
 			self.gGameDone = True
+			
+	def getHeadLocation(self):
+		retLocation = []
+		retLocation.append(self.gHead.location.x)
+		retLocation.append(self.gHead.location.y)
+		return retLocation
+	def getFoodLocation(self):
+		retLocation = []
+		retLocation.append(self.gFood.location.x)
+		retLocation.append(self.gFood.location.y)
+		return retLocation
+	def getTailListLocation(self):
+		retLocation = []
+		for i in self.gTailList:
+			tmpListElement = []
+			tmpListElement.append(i.location.x)
+			tmpListElement.append(i.location.y)
+			retLocation.append(tmpListElement)
+		return retLocation
+	def getWallListLocation(self):
+		retLocation = []
+		for i in self.gWallList:
+			tmpListElement = []
+			tmpListElement.append(i.location.x)
+			tmpListElement.append(i.location.y)
+			retLocation.append(tmpListElement)
+		return retLocation
+
+	def copyGameState(self):
+		retGame = snakeGameComponents()
+		retGame.gHead = self.gHead.copyObject()
+		retGame.gFood = self.gFood.copyObject()
+		retGame.gTailList = []
+		for i in self.gTailList:
+			retGame.gTailList.append(i.copyObject())
+		retGame.gWallList = []
+		for i in self.gWallList:
+			retGame.gWallList.append(i.copyObject())
+		retGame.gGraph = []
+		for i in self.gGraph:
+			tmpRow = []
+			for j in i:
+				tmpRow.append(j.copyObject())
+			retGame.gGraph.append(tmpRow)
+		
+		retGame.gGameDone = self.gGameDone
+		retGame.gScore = self.gScore
+		
+		return retGame
