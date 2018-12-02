@@ -4,6 +4,7 @@
 #
 
 from abc import ABC, abstractmethod
+import random
 
 
 class Policy(ABC):
@@ -79,27 +80,27 @@ class Policy(ABC):
 
     def absDirToShort(self, inpDir):
         retShort = None
-        if inpDir[0] == 0 and inpDir[1] < 0:
-            retShort = 0
-        elif inpDir[0] > 0 and inpDir[1] == 0:
-            retShort = 1
-        elif inpDir[0] == 0 and inpDir[1] > 0:
-            retShort = 2
-        elif inpDir[0] < 0 and inpDir[1] == 0:
-            retShort = 3
+        if inpDir == self._config.rawMovmentValue["NORTH"]:
+            retShort = self._config.movementsShortValue["NORTH"]
+        elif inpDir == self._config.rawMovmentValue["EAST"]:
+            retShort = self._config.movementsShortValue["EAST"]
+        elif inpDir == self._config.rawMovmentValue["SOUTH"]:
+            retShort = self._config.movementsShortValue["SOUTH"]
+        elif inpDir == self._config.rawMovmentValue["WEST"]:
+            retShort = self._config.movementsShortValue["WEST"]
         return retShort
 
 
     def shortToAbsDir(self, inpShort):
         retDir = None
-        if inpShort == 0:
-            retDir = [0, -1]
-        elif inpShort == 1:
-            retDir = [1, 0]
-        elif inpShort == 2:
-            retDir = [0, 1]
-        elif inpShort == 3:
-            retDir = [-1, 0]
+        if inpShort == self._config.movementsShortValue["NORTH"]:
+            retDir = self._config.rawMovmentValue["NORTH"]
+        elif inpShort == self._config.movementsShortValue["EAST"]:
+            retDir = self._config.rawMovmentValue["EAST"]
+        elif inpShort == self._config.movementsShortValue["SOUTH"]:
+            retDir = self._config.rawMovmentValue["SOUTH"]
+        elif inpShort == self._config.movementsShortValue["WEST"]:
+            retDir = self._config.rawMovmentValue["WEST"]
         return retDir
 
     def rewardValue(self, gamestate):
@@ -111,3 +112,16 @@ class Policy(ABC):
             retReward += self._config.reward.hazard
         retReward += self._config.reward.living
         return retReward
+        
+    def moveScrambler(self, inpRelativeDirection):
+        probabilityTotal = 0
+        for direction in self._config.stochastic.directions[inpRelativeDirection]:
+            probabilityTotal += self._config.stochastic.directions[inpRelativeDirection][direction]
+        randomValue = random.random()*(probabilityTotal)
+        probabilitySegment = 0
+        for direction in self._config.stochastic.directions[inpRelativeDirection]:
+            tempValue = self._config.stochastic.directions[inpRelativeDirection][direction]
+            if randomValue >= probabilitySegment and randomValue < probabilitySegment + tempValue:
+                return direction
+            probabilitySegment += tempValue
+        return list(self._config.stochastic.directions.keys())[0]

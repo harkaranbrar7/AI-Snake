@@ -8,29 +8,23 @@ class PolicyConfiguration:
         "FORWARD": 1,
         "RIGHT": 2
     }
-    movements = {
+    movementsShortValue = {
         "NORTH": 0,
         "EAST": 1,
         "SOUTH": 2,
         "WEST": 3
+    }
+    rawMovmentValue = {
+        "NORTH": [0,-1],
+        "EAST": [1,0],
+        "SOUTH": [0,1],
+        "WEST": [-1,0]
     }
 
     def __init__(self):
         self.reward = Reward()
         self.discount = Discount()
         self.stochastic = Stochastic()
-        self.actions = {
-            "LEFT": 0,
-            "FORWARD": 1,
-            "RIGHT": 2
-        }
-        self.movements = {
-            "NORTH": 0,
-            "EAST": 1,
-            "SOUTH": 2,
-            "WEST": 3
-        }
-
 
 class Reward:
     def __init__(self):

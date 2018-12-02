@@ -29,9 +29,10 @@ class PolicyIteration(Policy):
     def best_move(self, gamestate):
 
         results = self.policy_iteration(gamestate, 10)
+        scrambledMove = self.moveScrambler(results[1])
         move = self.relativeToAbsoluteDirection(
             gamestate.getAbsoluteHeadDirection(),
-            results[1]
+            scrambledMove
         )
         return move
 
