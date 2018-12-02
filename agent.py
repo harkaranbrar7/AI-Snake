@@ -2,7 +2,7 @@
 # ----------
 
 import policy
-from enumerations import Enumerations
+
 
 class Agent:
 
@@ -18,11 +18,16 @@ class Agent:
     def policy(self, policy):
         self._policy = policy
 
-    def move(self):
+    ##
+    #
+    # @return returns a location [x,y]
+    def move(self, gamestate):
 
-        best_move = policy.best_move()
+        best_move = self._policy.best_move(gamestate)
 
+        print("t")
         # Map best move to corresponding game action
+        """
         if best_move == Enumerations.RIGHT:
             pass
         elif best_move == Enumerations.UP:
@@ -33,4 +38,6 @@ class Agent:
             pass
         else:
             raise Exception("invalid move")
+        """
 
+        return [0,1]

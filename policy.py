@@ -2,7 +2,7 @@
 #   ----------
 #   Abstract Class
 #
-from enumerations import Enumerations
+
 from abc import ABC, abstractmethod
 
 
@@ -28,23 +28,30 @@ class Policy(ABC):
         pass
 
     ##
+    #   Accessor Method For Instance Variable: self.config
+    #
+    @property
+    @abstractmethod
+    def config(self):
+        return
+
+    ##
+    #   Mutator Method For Instance Variable: self.config
+    #
+    @config.setter
+    @abstractmethod
+    def config(self, config):
+        pass
+
+    ##
     #   Determines the best move given the current gamestate
     #   @param location a tuple representing a location in the game
     #   @return the recommended move
     #
     @abstractmethod
-    def best_move(self, location):
+    def best_move(self, gamestate):
         pass
 
-    ##
-    #   Accessor Method For Instance Variable: location
-    #   location is a dictionary containing tuples of the form (location, value, best move)
-    #   return self.location
-    #
-    @property
-    @abstractmethod
-    def location(self):
-        pass
 
     ##
     #   Returns the current policy
