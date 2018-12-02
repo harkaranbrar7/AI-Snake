@@ -60,3 +60,54 @@ class Policy(ABC):
     @abstractmethod
     def policy(self):
         pass
+
+    ##
+    # Converts Relative Directions to Absolute Directions
+    # @param prior_absolution_direction The (absolute) direction last taken
+    # @param relative_direction the relative direction to be converted into absolute
+    # @return the new absolute direction
+
+    def relativeToAbsoluteDirection(self, prior_absolute_direction, relative_direction):
+        direction_index = self._config.actions[relative_direction]
+        retDirection = self.shortToAbsDir((self.absDirToShort(prior_absolute_direction) + direction_index) % 4)
+        return retDirection
+
+
+    def directionToLocation(self, inpLoc, inpDirection):
+        retLocation = [x + y for x, y in zip(inpLoc, inpDirection)]
+        return retLocation
+
+    def absDirToShort(self, inpDir):
+        retShort = None
+        if inpDir[0] == 0 and inpDir[1] < 0:
+            retShort = 0
+        elif inpDir[0] > 0 and inpDir[1] == 0:
+            retShort = 1
+        elif inpDir[0] == 0 and inpDir[1] > 0:
+            retShort = 2
+        elif inpDir[0] < 0 and inpDir[1] == 0:
+            retShort = 3
+        return retShort
+
+
+    def shortToAbsDir(self, inpShort):
+        retDir = None
+        if inpShort == 0:
+            retDir = [0, -1]
+        elif inpShort == 1:
+            retDir = [1, 0]
+        elif inpShort == 2:
+            retDir = [0, 1]
+        elif inpShort == 3:
+            retDir = [-1, 0]
+        return retDir
+
+    def rewardValue(self, gamestate):
+        retReward = 0
+        location = gamestate.getHeadLocation()
+        if gamestate.isRewardSpot(location):
+            retReward += self._config.reward.food
+        if gamestate.isHazardSpot(location):
+            retReward += self._config.reward.hazard
+        retReward += self._config.reward.living
+        return retReward
