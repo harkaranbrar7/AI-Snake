@@ -24,9 +24,7 @@ class ValueIteration(Policy):
         self._reward = reward
 
     def best_move(self, gamestate):
-
-        best_value = self.value_iteration_recursion(gamestate, 3)
-        return self.value_iteration_recursion(gamestate, 3)
+        return self.policy_extraction(gamestate, 3)
 
         pass
 
@@ -74,9 +72,7 @@ class ValueIteration(Policy):
         # Loop through Each Possible Action
         # Calculate corresponding value
         for action, possible_actions in self._config.stochastic.directions.items():
-            localRewardList = {action: 0}
-
-
+            localReward = 0
             localProbTotal = 0              # Used for Normalization
 
             # Loop through each Possible Direction
@@ -92,18 +88,18 @@ class ValueIteration(Policy):
                 # (x,y) = (localNewDirection[0], localNewDirection[1])
                 possible_gamestate.gameLogicIteration(localNewDirection[0], localNewDirection[1])
 
-                current_reward = self.rewardValue(gamestate)
-                if current_reward < 0:
+                current_reward = self.rewardValue(possible_gamestate)
+                if possible_gamestate.getGameEnd():
                     iteration = 0
 
                 current_value = self.value_iteration_recursion(possible_gamestate, iteration - 1)
 
-                localRewardList[action] += probability * (current_reward + self._config.discount.gamma * current_value)
+                localReward += probability * (current_reward + self._config.discount.gamma * current_value)
                 localProbTotal += probability
-            localRewardList[action] /= localProbTotal # Normalization
+            localReward /= localProbTotal # Normalization
 
             # Find highest value & return it
-            reward_value = localRewardList[action]
+            reward_value = localReward
             if reward_value > highest_reward:
                 highest_reward = reward_value
 
@@ -115,19 +111,18 @@ class ValueIteration(Policy):
 
     def policy_extraction(self, gamestate, k):
         iteration = k
-        # (self, inpLoc, inpDir, inpGraph, inpIter, inpActList, inpProbList, inpDiscount):
         if iteration <= 0:
-            return 0
+            return None
         localRewardList = []
 
+        highest_index = current_index = forward_index = 0
         highest_reward = float("-inf")
-
-        highest_action = PolicyConfiguration.actions.get("FORWARD")
+        highest_action = list(self._config.stochastic.directions.keys())[0]
 
         # Loop through Each Possible Action
         # Calculate corresponding value
         for action, possible_actions in self._config.stochastic.directions.items():
-            localRewardList = {action: 0}
+            localReward = 0
             localProbTotal = 0
 
             # Loop through each Possible Direction
@@ -138,30 +133,46 @@ class ValueIteration(Policy):
                     possible_action
                 )
 
+                possible_gamestate = gamestate.copyGameState()
+                
                 # (x,y) = (localNewDirection[0], localNewDirection[1])
-                gamestate.gameLogicIteration(localNewDirection[0], localNewDirection[1])
+                possible_gamestate.gameLogicIteration(localNewDirection[0], localNewDirection[1])
 
-                current_reward = self.rewardValue(gamestate)
-                if current_reward < 0:
+                current_reward = self.rewardValue(possible_gamestate)
+                if possible_gamestate.getGameEnd():
                     iteration = 0
 
-                current_value = self.value_iteration_recursion(gamestate.copyGameState(), iteration - 1)
+                current_value = self.value_iteration_recursion(possible_gamestate.copyGameState(), iteration - 1)
 
-                localRewardList[action] += probability * (current_reward + self._config.discount.gamma * current_value)
+                localReward += probability * (current_reward + self._config.discount.gamma * current_value)
                 localProbTotal += probability
-            localRewardList[action] /= localProbTotal  # Normalization
+            localReward /= localProbTotal  # Normalization
 
             # Find highest value & return it
-            reward_value = localRewardList[action]
+            reward_value = localReward
             if reward_value > highest_reward:
                 highest_reward = reward_value
-
-            if localRewardList[action] > localRewardList[highest_action]:
                 highest_action = action
+                highest_index = current_index
+
+            if action == "FORWARD":
+                forward_index = current_index
+            current_index += 1
+            localRewardList.append(localReward)
+                
 
         # Cache Results
         # self.policy_results[gamestate] = (highest_reward, None)
 
-        return PolicyConfiguration.actions[highest_action]
+        if localRewardList[forward_index] == localRewardList[highest_index]:
+            highest_action = "FORWARD"
+        
+        returnDirection = self.relativeToAbsoluteDirection(
+                    gamestate.getAbsoluteHeadDirection(),
+                    highest_action
+                )
+        return returnDirection
+        
+        #return PolicyConfiguration.actions[highest_action]
         #return highest_reward
 

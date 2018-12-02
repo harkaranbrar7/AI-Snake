@@ -68,7 +68,7 @@ class Policy(ABC):
     # @return the new absolute direction
 
     def relativeToAbsoluteDirection(self, prior_absolute_direction, relative_direction):
-        direction_index = self._config.actions[relative_direction]
+        direction_index = self._config.actions[relative_direction] - 1
         retDirection = self.shortToAbsDir((self.absDirToShort(prior_absolute_direction) + direction_index) % 4)
         return retDirection
 
@@ -105,7 +105,7 @@ class Policy(ABC):
     def rewardValue(self, gamestate):
         retReward = 0
         location = gamestate.getHeadLocation()
-        if gamestate.isRewardSpot(location):
+        if gamestate.isScoreChange():
             retReward += self._config.reward.food
         if gamestate.isHazardSpot(location):
             retReward += self._config.reward.hazard

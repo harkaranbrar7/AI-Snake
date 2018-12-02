@@ -56,14 +56,14 @@ class Stochastic:
             },
 
             "LEFT": {
-                "FORWARD": 100,
-                "LEFT": 0,
+                "FORWARD": 0,
+                "LEFT": 100,
                 "RIGHT": 0
             },
 
             "RIGHT": {
-                "FORWARD": 100,
+                "FORWARD": 0,
                 "LEFT": 0,
-                "RIGHT": 0
+                "RIGHT": 100
             }
         }

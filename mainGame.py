@@ -88,7 +88,7 @@ def main():
     game = Game()
 
     pc = PolicyConfiguration()
-    # policy = ValueIteration()
+    #policy = ValueIteration()
     policy = PolicyIteration()
     policy.config = pc
 

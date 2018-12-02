@@ -81,13 +81,16 @@ class PolicyIteration(Policy):
         if iteration <= 0:
             return 0, None
 
+        localRewardList = []
+        highest_index = current_index = forward_index = 0
+        
         highest_reward = float("-inf")
         best_action = None
 
         # Loop through Each Possible Action
         # Calculate corresponding value
         for action, possible_actions in self._config.stochastic.directions.items():
-            localRewardList = {action: 0}
+            localReward = 0
 
             localProbTotal = 0  # Used for Normalization
 
@@ -104,8 +107,8 @@ class PolicyIteration(Policy):
                 # (x,y) = (localNewDirection[0], localNewDirection[1])
                 possible_gamestate.gameLogicIteration(localNewDirection[0], localNewDirection[1])
 
-                current_reward = self.rewardValue(gamestate)
-                if current_reward < 0:
+                current_reward = self.rewardValue(possible_gamestate)
+                if possible_gamestate.getGameEnd():
                     iteration = 0
 
                 # Dynamic Programming
@@ -121,19 +124,24 @@ class PolicyIteration(Policy):
                 else:
                     current_value = self.policy_iteration(possible_gamestate, iteration - 1)[0]
 
-                localRewardList[action] += probability * (current_reward + self._config.discount.gamma * current_value)
+                localReward += probability * (current_reward + self._config.discount.gamma * current_value)
                 localProbTotal += probability
-            localRewardList[action] /= localProbTotal  # Normalization
+            localReward /= localProbTotal  # Normalization
 
             # Find highest value & return it
-            reward_value = localRewardList[action]
+            reward_value = localReward
             if reward_value > highest_reward:
                 highest_reward = reward_value
                 best_action = action
+                highest_index = current_index
+            if action == "FORWARD":
+                forward_index = current_index
+            current_index += 1
+            localRewardList.append(localReward)
 
-            # In the event all action have same value, GO Forward!
-            if(best_action == "FORWARD"):
-                best_action = "FORWARD"
+        # In the event all action have same value, GO Forward!
+        if localRewardList[forward_index] == localRewardList[highest_index]:
+            best_action = "FORWARD"
 
         # Cache Results
         head = tuple(gamestate.getHeadLocation())
