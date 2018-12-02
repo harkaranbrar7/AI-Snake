@@ -20,7 +20,7 @@ class Agent:
 
     ##
     #
-    # @return returns a location [x,y]
+    #   @return returns a location [x,y]
     def move(self, gamestate):
 
         best_move = self._policy.best_move(gamestate)
@@ -40,4 +40,4 @@ class Agent:
             raise Exception("invalid move")
         """
 
-        return [0,1]
+        return best_move

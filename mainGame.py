@@ -1,8 +1,8 @@
 from snakeGameComponents import snakeGameComponents
 from value_iteration import ValueIteration
+from policy_iteration import PolicyIteration
 from policy_configuration import PolicyConfiguration
 from agent import Agent
-from valueIter import valueIteration
 
 
 
@@ -88,7 +88,8 @@ def main():
     game = Game()
 
     pc = PolicyConfiguration()
-    policy = ValueIteration()
+    # policy = ValueIteration()
+    policy = PolicyIteration()
     policy.config = pc
 
     agent = Agent()
