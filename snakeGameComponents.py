@@ -315,3 +315,15 @@ class snakeGameComponents:
 		retGame.gScore = self.gScore
 		
 		return retGame
+		
+	def isEmptySpot(self, location)
+		return self.gGraph[location[1]][location[0]].isEmpty()
+	def isHazardSpot(self, location)
+		return self.gGraph[location[1]][location[0]].isHazard()
+	def isRewardSpot(self, location)
+		return self.gGraph[location[1]][location[0]].isReward()
+		
+	def getScore(self)
+		return self.gScore
+	def getGameEnd(self)
+		return self.gGameDone
