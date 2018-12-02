@@ -82,6 +82,7 @@ class snakeGameComponents:
     gWallList = None
     gGraph = None
     gScore = None
+    gPreviousScore = None
     gGameDone = None
     GSCOREINCREASEVALUE = 1
 
@@ -250,6 +251,7 @@ class snakeGameComponents:
         self.gGameDone = False
 
     def gameLogicIteration(self, inpXChange, inpYChange):
+        self.gPreviousScore = self.gScore
         self.clearSnake(self.gGraph, self.gHead, self.gTailList)
         localDirection = cartesianLocation(inpXChange, inpYChange)
         self.moveSnake(self.gTailList, self.gHead, localDirection, len(self.gGraph))
@@ -328,6 +330,9 @@ class snakeGameComponents:
     def isRewardSpot(self, location):
         return self.gGraph[location[1]][location[0]].isReward()
 
+    def isScoreChange(self):
+        return self.gPreviousScore != self.gScore
+        
     def getScore(self):
         return self.gScore
     def getGameEnd(self):
