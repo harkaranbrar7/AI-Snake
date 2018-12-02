@@ -1,7 +1,7 @@
 from snakeGameComponents import snakeGameComponents
 from valueIter import valueIteration
 
-GINPUTTYPE = 1
+GINPUTTYPE = 0
 GWORLDSIZE = 6
 GVISUALIZE = True
 GGATHERREWARD = False
@@ -77,6 +77,11 @@ def mainLoop():
 			print(gameData.getFoodLocation())
 			print(gameData.getTailListLocation())
 			print(gameData.getWallListLocation())
+			print(gameData.getGameEnd())
+			print(gameData.getScore())
+			print(gameData.isEmptySpot([1, 1]))
+			print(gameData.isHazardSpot([2, 2]))
+			print(gameData.isRewardSpot([3, 3]))
 		if gDebugging[1]:
 			tmpGame = gameData.copyGameState()
 			print(tmpGame.gHead)
