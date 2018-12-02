@@ -24,7 +24,13 @@ class ValueIteration(Policy):
         self._reward = reward
 
     def best_move(self, gamestate):
-        return self.policy_extraction(gamestate, 3)
+    
+        scrambledMove = self.moveScrambler(self.policy_extraction(gamestate, 3))
+        returnDirection = self.relativeToAbsoluteDirection(
+                    gamestate.getAbsoluteHeadDirection(),
+                    scrambledMove
+                )
+        return returnDirection
 
         pass
 
@@ -167,11 +173,7 @@ class ValueIteration(Policy):
         if localRewardList[forward_index] == localRewardList[highest_index]:
             highest_action = "FORWARD"
         
-        returnDirection = self.relativeToAbsoluteDirection(
-                    gamestate.getAbsoluteHeadDirection(),
-                    highest_action
-                )
-        return returnDirection
+        return highest_action
         
         #return PolicyConfiguration.actions[highest_action]
         #return highest_reward
