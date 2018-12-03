@@ -1,12 +1,14 @@
+from tkinter import *
 from snakeGameComponents import snakeGameComponents
 from valueIter import valueIteration
 
 GINPUTTYPE = 0
-GWORLDSIZE = 6
+GWORLDSIZE = 25
 GVISUALIZE = True
 GGATHERREWARD = False
 gPreviousScore = None
 gDebugging = [False, False, False]
+
 
 gProbList = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 
@@ -51,7 +53,7 @@ def aiInterceptor(inpLoc, inpDir, inpGraph, inpIter, inpProbList, inpDiscount):
 	return retCoordinates
 	
 	
-def mainLoop():
+def master():
 	gameData = snakeGameComponents()
 	gameData.initializeGameData(GWORLDSIZE)
 	gameData.drawGraph(gameData.gGraph)
@@ -99,5 +101,12 @@ def mainLoop():
 			print(tmpGame.getWallListLocation())
 			print(tmpGame.gScore)
 			print(tmpGame.gGameDone)
+			
 		
-mainLoop()
+ master()
+
+# root = Tk()
+# root.title("Snake Game")
+# root.geometry('350x200')
+# game = master(root)
+# root.mainloop()
