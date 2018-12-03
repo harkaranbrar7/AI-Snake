@@ -7,7 +7,7 @@ from random import randint
 
 
 # constants that go in the making of the grid used for the snake's movment
-GRADUATION = 20
+GRADUATION = 60
 PIXEL = 10
 STEP = 2 * PIXEL
 WD = PIXEL * GRADUATION
@@ -25,6 +25,18 @@ SN_COLOR = 'white'
 SN = 'snake'
 OB = 'obstacle'
 SIZE = {SN: SN_SIZE, OB: OB_SIZE}
+
+
+# constants for keyboard input
+UP = 'Up'
+DOWN = 'Down'
+RIGHT = 'Right'
+LEFT = 'Left'
+# a dictionary to ease access to 'directions'
+DIRECTIONS = {UP: [0, -1], DOWN: [0, 1], RIGHT: [1, 0], LEFT: [-1, 0]}
+AXES = {UP: 'Vertical', DOWN: 'Vertical', RIGHT: 'Horizontal', LEFT: 'Horizontal'}
+# refresh time for the perpetual motion
+REFRESH_TIME = 100
 
 gameData = snakeGameComponents();
 gameData.initializeGameData(GRADUATION);
@@ -87,14 +99,16 @@ class Obstacle(Shape):
         """only create the obstacles where there is no snake body part"""
         self.can = can
         foodLocation = gameData.getFoodLocation();
-        a = PIXEL + 2 * foodLocation[0]
-        b = PIXEL + 2 * foodLocation[1]
+        a = PIXEL + 2 * foodLocation[0]/2
+        b = PIXEL + 2 * foodLocation[1]/2
         # p = int(GRADUATION/2 - 1)
         # n, m = randint(0, p), randint(0, p)
         # a, b = PIXEL * (2 * n + 1), PIXEL * (2 * m + 1)
-        # while [a, b] in [[block.x, block.y] for block in self.can.snake.blocks]:
-        #     n, m = randint(0, p), randint(0, p)
-        #     a, b = PIXEL * (2 * n + 1), PIXEL * (2 * m + 1)
+        while [a, b] in [[block.x, block.y] for block in self.can.snake.blocks]:
+            #     n, m = randint(0, p), randint(0, p)
+            a = PIXEL + 2 * foodLocation[0]/2
+            b = PIXEL + 2 * foodLocation[1]/2
+            a, b = PIXEL * (2 * a + 1), PIXEL * (2 * b + 1)
         super().__init__(can, a, b, OB)
 
 
@@ -110,10 +124,27 @@ class Snake(Shape):
         self.can = can
         headLocation = gameData.getHeadLocation();
         """initial position chosen by me"""
-        #a = PIXEL + 2 * int(GRADUATION/4) * PIXEL
+        # a = PIXEL + 2 * int(GRADUATION/4) * PIXEL
         a = PIXEL + 2 * headLocation[0]/2
         b = PIXEL + 2 * headLocation[1]/2
-        self.blocks = [Block(can, a, a), Block(can, b, b + STEP)]
+        self.blocks = [Block(can, a, b), Block(can, a, b + STEP)]
+
+
+    def move(self, path):
+        """an elementary step consisting of putting the tail of the snake in the first position"""
+        a = (self.blocks[-1].x + STEP * path[0]) % WD
+        b = (self.blocks[-1].y + STEP * path[1]) % HT
+        # if a == self.can.obstacle.x and b == self.can.obstacle.y:  # check if we find food
+        #     self.can.score.increment()
+        #     self.can.obstacle.delete()
+        #     self.blocks.append(Block(self.can, a, b))
+        #     self.can.obstacle = Obstacle(self.can)
+        # #elif [a, b] in [[block.x, block.y] for block in self.blocks]:  # check if we hit a body part
+        #     #self.can.clean()
+        # else:
+        # tab them -----
+        self.blocks[0].modify(a, b)
+        self.blocks = self.blocks[1:] + [self.blocks[0]]
 
 
 
@@ -127,8 +158,8 @@ class Movement:
     def begin(self):
         """start the perpetual motion"""
         if self.flag > 0:
-            self.can.snake.move(gameData.gameLogicIteration(1,0));
-            #self.can.snake.move(DIRECTIONS[self.direction])
+            #self.can.snake.move(gameData.gameLogicIteration(0,1));
+            self.can.snake.move(DIRECTIONS[self.direction])
             self.can.after(REFRESH_TIME, self.begin)
 
     def stop(self):
