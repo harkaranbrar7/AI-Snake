@@ -2,8 +2,9 @@ from snakeGameComponents import snakeGameComponents
 from value_iteration import ValueIteration
 from policy_iteration import PolicyIteration
 from policy_configuration import PolicyConfiguration
+from display import Display
 from agent import Agent
-
+import threading
 
 
 class Game:
@@ -16,6 +17,8 @@ class Game:
         self.GGATHERREWARD = False
         self.gPreviousScore = None
         self.gProbList = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        self.display = None
+        self.game_thread = threading.Thread(target=self.mainLoop)
         pass
 
 
@@ -59,12 +62,21 @@ class Game:
 
         return retCoordinates
 
+    def start(self):
+
+        # Game Logic Runs In It's Own Thread
+        self.game_thread.start()
+
+        # Rendering Logic Runs on Main Thread (Since It Blocks Like A Mofo!)
+        self.display = Display()
 
     def mainLoop(self):
+
         gameData = snakeGameComponents()
         gameData.initializeGameData(self.GWORLDSIZE)
         gameData.drawGraph(gameData.gGraph)
         gPreviousScore = 0
+
         while (gameData.gGameDone == False):
             new_location = None
             if self.GINPUTTYPE == 0:
@@ -73,6 +85,8 @@ class Game:
 
                 # Process AI Actions
                 new_location = self.agent.move(gameData.copyGameState())
+
+                # Rendering Code
 
                 input('press to unpause')
             gameData.gameLogicIteration(new_location[0], new_location[1])
@@ -96,8 +110,7 @@ def main():
     agent.policy = policy
 
     game.agent = agent
-    game.mainLoop()
-
+    game.start()
 
 
 main()
