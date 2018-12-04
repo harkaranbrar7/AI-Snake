@@ -25,7 +25,7 @@ class Agent:
 
         best_move = self._policy.best_move(gamestate)
 
-        print("t")
+        #print("t")
         # Map best move to corresponding game action
         """
         if best_move == Enumerations.RIGHT:

@@ -82,9 +82,10 @@ class qLearningAgent(Policy):
     def rewardQValue(self, inpGameState, inpOldGameState, inpAction):
         retReward = self.rewardValue(inpGameState)
         location = inpGameState.getHeadLocation()
-        if not inpGameState.isHazardSpot(location):
+        #if not inpGameState.isHazardSpot(location):
+        if self.getQValue(inpOldGameState, inpAction) == 0:
             if self.isUnexploredSpot(inpGameState):
-                retReward += self._config.reward.food * 100
+                retReward += self._config.reward.goodLocation
         return retReward
         
     

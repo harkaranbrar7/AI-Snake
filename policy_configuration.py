@@ -23,53 +23,48 @@ class PolicyConfiguration:
 
     def __init__(self):
         self.reward = Reward()
-        self.discount = Discount()
+        self.discount = Discount(inpGamma = 1)
         self.stochastic = Stochastic()
 
 class Reward:
-    def __init__(self):
-        #self.food = 1
-        #self.hazard = -1
-        #self.living = 0
+    def __init__(self, inpFood = 1, inpHazard = -1, inpLiving = 0, inpGoodLoc = 10, inpBadLoc = -1):
+        self.food = inpFood
+        self.hazard = inpHazard
+        self.living = inpLiving
         
         #qLearning
-        self.food = 1
-        self.hazard = -1
-        self.living = 0
-        self.goodLocation = 1
+        self.goodLocation = inpGoodLoc
+        self.badLocation = inpBadLoc
 
 
 class Discount:
-    def __init__(self):
-        self.alpha = 0.5
-        self.gamma = 0.99
-        self.epsilon = 0.2
+    def __init__(self, inpGamma = 0.99, inpAlpha= 0.1, inpEpsilon = 0.1):
+        self.gamma = inpGamma
         
         #qLearning
-        #self.alpha = 0.01
-        #self.gamma = 0.99
-        #self.epsilon = 0.05
+        self.alpha = inpAlpha
+        self.epsilon = inpEpsilon
 
 
 class Stochastic:
 
-    def __init__(self):
+    def __init__(self, inpFW = [100, 0, 0], inpLT = [0, 100, 0], inpRT = [0, 0, 100]):
         self.directions = {
             "FORWARD" : {
-                "FORWARD" : 100,
-                "LEFT" : 0,
-                "RIGHT" : 0
+                "FORWARD" : inpFW[0],
+                "LEFT" : inpFW[1],
+                "RIGHT" : inpFW[2]
             },
 
             "LEFT": {
-                "FORWARD": 0,
-                "LEFT": 100,
-                "RIGHT": 0
+                "FORWARD": inpLT[0],
+                "LEFT": inpLT[1],
+                "RIGHT": inpLT[2]
             },
 
             "RIGHT": {
-                "FORWARD": 0,
-                "LEFT": 0,
-                "RIGHT": 100
+                "FORWARD": inpRT[0],
+                "LEFT": inpRT[1],
+                "RIGHT": inpRT[2]
             }
         }

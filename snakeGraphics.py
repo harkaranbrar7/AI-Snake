@@ -6,73 +6,59 @@ from policy_iteration import PolicyIteration
 from policy_configuration import PolicyConfiguration
 from agent import Agent
 
-
-
-AIINPUT = True
-
-# constants that go in the making of the grid used for the snake's movment
-GRADUATION = 6
-PIXEL = 10
-STEP = 2 * PIXEL
-WD = PIXEL * GRADUATION
-HT = PIXEL * GRADUATION
-# constants that go into specifying the shapes' sizes
-OB_SIZE_FACTOR = 0.7
-SN_SIZE_FACTOR = 0.9
-OB_SIZE = PIXEL * OB_SIZE_FACTOR
-SN_SIZE = PIXEL * SN_SIZE_FACTOR
-# color constants
-BG_COLOR = 'black'
-OB_COLOR = 'red'
-SN_COLOR = 'white'
-# a dictionary to ease access to a shape's type in the Shape class
-SN = 'snake'
-OB = 'Food'
-SIZE = {SN: SN_SIZE, OB: OB_SIZE}
-
-
-# constants for keyboard input
-UP = 'Up'
-DOWN = 'Down'
-RIGHT = 'Right'
-LEFT = 'Left'
-# a dictionary to ease access to 'directions'
-DIRECTIONS = {UP: [0, -1], DOWN: [0, 1], RIGHT: [1, 0], LEFT: [-1, 0]}
-AXES = {UP: 'Vertical', DOWN: 'Vertical', RIGHT: 'Horizontal', LEFT: 'Horizontal'}
-# refresh time for the perpetual motion
-REFRESH_TIME = 100
-
-gameData = snakeGameComponents();
-agent = Agent()
-
-
-
 class Master(Canvas):
-    def __init__(self,boss=None):
+
+    COLORHEAD = "blue"
+    COLORTAIL = "green"
+    COLORFOOD = "red"
+    COLORWALL = "white"
+    BG_COLOR = 'black'
+    CANVASSIZE = 500
+    
+    # constants for keyboard input
+    UP = 'Up'
+    DOWN = 'Down'
+    RIGHT = 'Right'
+    LEFT = 'Left'
+    # a dictionary to ease access to 'directions'
+    DIRECTIONS = {UP: [0, -1], DOWN: [0, 1], RIGHT: [1, 0], LEFT: [-1, 0]}
+    AXES = {UP: 'Vertical', DOWN: 'Vertical', RIGHT: 'Horizontal', LEFT: 'Horizontal'}
+
+    def __init__(self,boss=None, inpWorldSize=6, inpAIType=0):
         super().__init__(boss)
-        self.configure(width=WD, height=HT, bg=BG_COLOR)
+        self.configure(width=self.CANVASSIZE, height=self.CANVASSIZE, bg=self.BG_COLOR)
         self.running = 0
+        self.gameEnd = False
         self.snake = None
+        self.head = None
+        self.tail = None
         self.Food = None
+        self.wall = None
         self.direction = None
         self.current = None
         self.score = Scores(boss)
+        self.gameData = None
+        self.WORLDSIZE = inpWorldSize
+        self.aiType = inpAIType
 
     def start(self):
         """start snake game"""
         if self.running == 0:
-            gameData.initializeGameData(GRADUATION);
-            pc = PolicyConfiguration()
-            policy = ValueIteration()
-            #policy = PolicyIteration()
-            policy.config = pc
+            self.gameData = snakeGameComponents()
+            self.gameData.initializeGameData(self.WORLDSIZE)
 
-            
-            agent.policy = policy
-            self.snake = Snake(self)
-            self.Food = Food(self)
-            self.direction = RIGHT
-            self.current = Movement(self, RIGHT)
+            self.gameEnd = False
+            tmpLocation = self.gameData.getHeadLocation()
+            self.head = Head(self, tmpLocation[0], tmpLocation[1], self.COLORHEAD, self.CANVASSIZE, self.WORLDSIZE)
+            self.tail = []
+            self.updateTail()
+            tmpLocation = self.gameData.getFoodLocation()
+            self.Food = Food(self, tmpLocation[0], tmpLocation[1], self.COLORFOOD, self.CANVASSIZE, self.WORLDSIZE)
+            self.wall = []
+            self.updateWall()
+                
+            self.direction = self.RIGHT
+            self.current = Movement(self, self.DIRECTIONS[self.RIGHT], self.aiType)
             self.current.begin()
             self.running = 1
 
@@ -83,18 +69,53 @@ class Master(Canvas):
             self.current.stop()
             self.running = 0
             self.Food.delete()
-            for block in self.snake.blocks:
-                block.delete()
+            self.head.delete()
+            for tailSegment in self.tail:
+                tailSegment.delete()
+            for wallSegment in self.wall:
+                wallSegment.delete()
 
     def redirect(self, event):
         """taking keyboard inputs and moving the snake accordingly"""
         if 1 == self.running and \
-                event.keysym in AXES.keys() and \
-                AXES[event.keysym] != AXES[self.direction]:
+                event.keysym in self.AXES.keys() and \
+                self.AXES[event.keysym] != self.AXES[self.direction]:
             self.current.flag = 0
             self.direction = event.keysym
-            self.current = Movement(self, event.keysym)  # a new instance at each turn to avoid confusion/tricking
+            self.current = Movement(self, self.DIRECTIONS[event.keysym], self.aiType)  # a new instance at each turn to avoid confusion/tricking
             self.current.begin()  # program gets tricked if the user presses two arrow keys really quickly
+            
+    def updateTail(self):
+        tmpTailList = self.gameData.getTailListLocation()
+        for i in range(len(tmpTailList)):
+            if i < len(self.tail):
+                self.tail[i].modify(tmpTailList[i][0], tmpTailList[i][1])
+            else:
+                self.tail.append(TailSegment(self, tmpTailList[i][0], tmpTailList[i][1], self.COLORTAIL, self.CANVASSIZE, self.WORLDSIZE))
+    
+    def updateWall(self):
+        tmpWallList = self.gameData.getWallListLocation()
+        for i in range(len(tmpWallList)):
+            if i < len(self.wall):
+                self.wall[i].modify(tmpWallList[i][0], tmpWallList[i][1])
+            else:
+                self.wall.append(WallSegment(self, tmpWallList[i][0], tmpWallList[i][1], self.COLORWALL, self.CANVASSIZE, self.WORLDSIZE))
+                
+    def updateHead(self):
+        tmpLocation = self.gameData.getHeadLocation()
+        self.head.modify(tmpLocation[0], tmpLocation[1])
+        
+    def updateFood(self):
+        tmpLocation = self.gameData.getFoodLocation()
+        self.Food.modify(tmpLocation[0], tmpLocation[1])
+        self.score.increment(self.gameData.getScore())
+        
+    def updateGameState(self, inpX, inpY):
+        self.gameData.gameLogicIteration(inpX, inpY)
+        self.gameEnd = self.gameData.getGameEnd()
+    
+    def copyGameState(self):
+        return self.gameData.copyGameState()
 
 
 
@@ -103,100 +124,122 @@ class Scores:
     def __init__(self, boss=None):
         self.counter = StringVar(boss, '0')
 
-    def increment(self):
-        score = gameData.getScore()
+    def increment(self, inpScore):
+        score = inpScore
         #maximum = max(score, int(self.maximum.get()))
         self.counter.set(str(score))
         #self.maximum.set(str(maximum))
 
 
 class Shape:
+
+    
+
     """This is a template to make Foods and snake body parts"""
-    def __init__(self, can, a, b, kind):
+    def __init__(self, can, inpX, inpY, inpColor, canSize, worldSize):
         self.can = can
-        self.x, self.y = a, b
-        self.kind = kind
-        if kind == SN:
-            self.ref = Canvas.create_rectangle(self.can,
-                                               a - SN_SIZE, b - SN_SIZE,
-                                               a + SN_SIZE, b + SN_SIZE,
-                                               fill=SN_COLOR,
-                                               width=2)
-        elif kind == OB:
-            self.ref = Canvas.create_oval(self.can,
-                                          a - OB_SIZE, b - OB_SIZE,
-                                          a + SN_SIZE, b + SN_SIZE,
-                                          fill=OB_COLOR,
-                                          width=2)
+        self.x, self.y = inpX, inpY
+        self.color = inpColor
+        self.scale = canSize / worldSize
+        self.borderwidth = self.scale / 50
 
-    def modify(self, a, b):
-        self.x, self.y = a, b
+    def modify(self, inpX, inpY):
+        self.x, self.y = inpX, inpY
+        graphicLocation = self.locationToGraphicLocation(self.x, self.y)
         self.can.coords(self.ref,
-                        a - SIZE[self.kind], b - SIZE[self.kind],
-                        a + SIZE[self.kind], b + SIZE[self.kind])
+                        graphicLocation[0][0], graphicLocation[0][1],
+                        graphicLocation[1][0], graphicLocation[1][1])
 
+    def drawOval(self):
+        graphicLocation = self.locationToGraphicLocation(self.x, self.y)
+        self.ref = Canvas.create_oval(self.can,
+                                          graphicLocation[0][0], graphicLocation[0][1],
+                                          graphicLocation[1][0], graphicLocation[1][1],
+                                          fill=self.color,
+                                          width=0)
+                                          
+    def drawRectangle(self):
+        graphicLocation = self.locationToGraphicLocation(self.x, self.y)
+        self.ref = Canvas.create_rectangle(self.can,
+                                          graphicLocation[0][0], graphicLocation[0][1],
+                                          graphicLocation[1][0], graphicLocation[1][1],
+                                          fill=self.color,
+                                          width=0)
+                        
     def delete(self):
         self.can.delete(self.ref)
+        
+    def locationToGraphicLocation(self, inpX, inpY):
+        beginX = inpX*self.scale + self.borderwidth
+        beginY = inpY*self.scale + self.borderwidth
+        endX = inpX*self.scale + self.scale - self.borderwidth
+        endY = inpY*self.scale + self.scale - self.borderwidth
+        return ((beginX, beginY),(endX, endY))
 
 
 class Food(Shape):
-    """snake food"""
-    def __init__(self, can):
+    def __init__(self, can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize):
         self.can = can
-        foodLocation = gameData.getFoodLocation();
-        a = PIXEL  * foodLocation[0]
-        b = PIXEL  * foodLocation[1]
-        super().__init__(can, a, b, OB)
+        super().__init__(can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize)
+        super().drawOval()
 
-
-class Block(Shape):
-    def __init__(self, can, a, y):
-        super().__init__(can, a, y, SN)
-
-
-
-class Snake(Shape):
-    def __init__(self,can):
+class Head(Shape):
+    def __init__(self, can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize):
         self.can = can
-        headLocation = gameData.getHeadLocation();
-        a = PIXEL + 2 * headLocation[0]/4 * PIXEL
-        b = PIXEL + 2 * headLocation[1]/4 * PIXEL
-        self.blocks = [Block(can, a, b)]
-
-
-    def move(self, path):
-        a = (PIXEL * path[0]) % WD
-        b = (PIXEL * path[1]) % HT
-        if a == self.can.Food.x and b == self.can.Food.y:  # check if we find food
-             self.can.score.increment()
-             self.can.Food.delete()
-             self.blocks.append(Block(self.can, a, b))
-             self.can.Food = Food(self.can)
-        # #elif [a, b] in [[block.x, block.y] for block in self.blocks]:  # check if we hit a body part
-        #     #self.can.clean()
-        # else:
-        # tab them -----
-        self.blocks[0].modify(a, b)
-        #self.blocks[1].modify(a,b)
-        self.blocks = self.blocks[1:] + [self.blocks[0]]
-
-
+        super().__init__(can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize)
+        super().drawRectangle()
+        
+class TailSegment(Shape):
+    def __init__(self, can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize):
+        self.can = can
+        super().__init__(can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize)
+        super().drawRectangle()
+        
+class WallSegment(Shape):
+    def __init__(self, can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize):
+        self.can = can
+        super().__init__(can, inpX, inpY, inpColor, inpCanvasSize, inpWorldSize)
+        super().drawRectangle()
 
 class Movement:
-    def __init__(self, can, direction):
+
+    #to simulate motion
+    REFRESH_TIME = 100
+
+    def __init__(self, can, direction, inpAIType):
         self.flag = 1
         self.can = can
         self.direction = direction
+        self.aiType = inpAIType
+        self.agent = Agent()
+        pc = PolicyConfiguration()
+        policy = None
+        if self.aiType == 1:
+            policy = ValueIteration()
+        elif self.aiType == 2:
+            policy = PolicyIteration()
+        elif self.aiType == 3:
+            policy = qLearningAgent()
+        else:
+            policy = ValueIteration()
+        policy.config = pc
+            
+        self.agent.policy = policy
 
     def begin(self):
         if self.flag > 0:
-            if not gameData.getGameEnd():
-                new_location = DIRECTIONS[self.direction]
-                if  AIINPUT:
-                    new_location = agent.move(gameData.copyGameState())
-                gameData.gameLogicIteration(new_location[0],new_location[1]);
-                self.can.snake.move(gameData.getHeadLocation())
-                self.can.after(REFRESH_TIME, self.begin)
+            if not self.can.gameEnd:
+                new_location = self.direction
+                if  self.aiType > 0:
+                    new_location = self.agent.move(self.can.copyGameState())
+                #gameData.gameLogicIteration(new_location[0],new_location[1]);
+                self.can.updateGameState(new_location[0],new_location[1])
+                #self.can.snake.move(gameData.getHeadLocation())
+                self.can.updateHead()
+                self.can.updateTail()
+                self.can.updateFood()
+                self.can.updateWall()
+                self.can.after(self.REFRESH_TIME, self.begin)
             else:
                 self.flag = 0;
 
@@ -207,14 +250,14 @@ class Movement:
 
 root = Tk()
 root.title("Snake Game")
-game = Master(root)
+game = Master(root, 6, 1)
 root.bind("<Key>", game.redirect)
 game.grid(column=1, row=0, rowspan=4)
-buttons = Frame(root, width=35, height=3*HT/5)
+buttons = Frame(root, width=35, height=3*game.CANVASSIZE/5)
 Button(buttons, text='Start', command=game.start).grid()
 Button(buttons, text='Stop', command=game.clean).grid()
 buttons.grid(column=0, row=0)
-scoreboard = Frame(root, width=35, height=2*HT/5)
+scoreboard = Frame(root, width=35, height=2*game.CANVASSIZE/5)
 Label(scoreboard, text='Game Score').grid()
 Label(scoreboard, textvariable=game.score.counter).grid()
 scoreboard.grid(column=0, row=2)
