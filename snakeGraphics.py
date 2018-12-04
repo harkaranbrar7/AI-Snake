@@ -1,13 +1,17 @@
 from tkinter import*
 from snakeGameComponents import*
 from random import randint
+from value_iteration import ValueIteration
+from policy_iteration import PolicyIteration
+from policy_configuration import PolicyConfiguration
+from agent import Agent
 
 
 
-
+AIINPUT = True
 
 # constants that go in the making of the grid used for the snake's movment
-GRADUATION = 60
+GRADUATION = 6
 PIXEL = 10
 STEP = 2 * PIXEL
 WD = PIXEL * GRADUATION
@@ -39,6 +43,8 @@ AXES = {UP: 'Vertical', DOWN: 'Vertical', RIGHT: 'Horizontal', LEFT: 'Horizontal
 REFRESH_TIME = 100
 
 gameData = snakeGameComponents();
+agent = Agent()
+
 
 
 class Master(Canvas):
@@ -56,12 +62,21 @@ class Master(Canvas):
         """start snake game"""
         if self.running == 0:
             gameData.initializeGameData(GRADUATION);
+            pc = PolicyConfiguration()
+            policy = ValueIteration()
+            #policy = PolicyIteration()
+            policy.config = pc
+
+            
+            agent.policy = policy
             self.snake = Snake(self)
             self.Food = Food(self)
             self.direction = RIGHT
             self.current = Movement(self, RIGHT)
             self.current.begin()
             self.running = 1
+
+
 
     def clean(self):
         if self.running == 1:
@@ -176,7 +191,10 @@ class Movement:
     def begin(self):
         if self.flag > 0:
             if not gameData.getGameEnd():
-                gameData.gameLogicIteration(DIRECTIONS[self.direction][0],DIRECTIONS[self.direction][1]);
+                new_location = DIRECTIONS[self.direction]
+                if  AIINPUT:
+                    new_location = agent.move(gameData.copyGameState())
+                gameData.gameLogicIteration(new_location[0],new_location[1]);
                 self.can.snake.move(gameData.getHeadLocation())
                 self.can.after(REFRESH_TIME, self.begin)
             else:
