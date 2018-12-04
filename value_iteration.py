@@ -25,7 +25,7 @@ class ValueIteration(Policy):
 
     def best_move(self, gamestate):
     
-        bestMove = self.policy_extraction(gamestate, 4)
+        bestMove = self.policy_extraction(gamestate, int(len(gamestate.gGraph)/2 + 1))
         scrambledMove = self.moveScrambler(bestMove)
         returnDirection = self.relativeToAbsoluteDirection(
                     gamestate.getAbsoluteHeadDirection(),
