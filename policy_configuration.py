@@ -14,11 +14,11 @@ class PolicyConfiguration:
         "SOUTH": 2,
         "WEST": 3
     }
-    rawMovmentValue = {
-        "NORTH": [0,-1],
-        "EAST": [1,0],
-        "SOUTH": [0,1],
-        "WEST": [-1,0]
+    rawMovementValue = {
+        "NORTH": (0,-1),
+        "EAST": (1,0),
+        "SOUTH": (0,1),
+        "WEST": (-1,0)
     }
 
     def __init__(self):
@@ -28,15 +28,27 @@ class PolicyConfiguration:
 
 class Reward:
     def __init__(self):
+        #self.food = 1
+        #self.hazard = -1
+        #self.living = 0
+        
+        #qLearning
         self.food = 1
         self.hazard = -1
         self.living = 0
+        self.goodLocation = 1
 
 
 class Discount:
     def __init__(self):
-        self.alpha = 1
-        self.gamma = 1
+        self.alpha = 0.5
+        self.gamma = 0.99
+        self.epsilon = 0.2
+        
+        #qLearning
+        #self.alpha = 0.01
+        #self.gamma = 0.99
+        #self.epsilon = 0.05
 
 
 class Stochastic:

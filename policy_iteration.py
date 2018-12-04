@@ -82,9 +82,7 @@ class PolicyIteration(Policy):
         if iteration <= 0:
             return 0, None
 
-        localRewardList = []
-        highest_index = current_index = forward_index = 0
-        
+        localRewardList = {}
         highest_reward = float("-inf")
         best_action = None
 
@@ -109,8 +107,11 @@ class PolicyIteration(Policy):
                 possible_gamestate.gameLogicIteration(localNewDirection[0], localNewDirection[1])
 
                 current_reward = self.rewardValue(possible_gamestate)
+                tempIteration = iteration
+                if probability == 0:
+                    tempIteration = 0
                 if possible_gamestate.getGameEnd():
-                    iteration = 0
+                    tempIteration = 0
 
                 # Dynamic Programming
                 # Use Cached values if it exists
@@ -123,7 +124,7 @@ class PolicyIteration(Policy):
                 if (key) in self.policy_results:
                     current_value = self.policy_results[key][0]
                 else:
-                    current_value = self.policy_iteration(possible_gamestate, iteration - 1)[0]
+                    current_value = self.policy_iteration(possible_gamestate, tempIteration - 1)[0]
 
                 localReward += probability * (current_reward + self._config.discount.gamma * current_value)
                 localProbTotal += probability
@@ -134,14 +135,10 @@ class PolicyIteration(Policy):
             if reward_value > highest_reward:
                 highest_reward = reward_value
                 best_action = action
-                highest_index = current_index
-            if action == "FORWARD":
-                forward_index = current_index
-            current_index += 1
-            localRewardList.append(localReward)
+            localRewardList[action] = localReward
 
         # In the event all action have same value, GO Forward!
-        if localRewardList[forward_index] == localRewardList[highest_index]:
+        if localRewardList[best_action] == localRewardList["FORWARD"]:
             best_action = "FORWARD"
 
         # Cache Results

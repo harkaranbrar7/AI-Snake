@@ -2,6 +2,7 @@ from snakeGameComponents import snakeGameComponents
 from value_iteration import ValueIteration
 from policy_iteration import PolicyIteration
 from policy_configuration import PolicyConfiguration
+from qLearning import qLearningAgent
 from agent import Agent
 
 
@@ -46,19 +47,6 @@ class Game:
 
         return retCoordinates
 
-    def aiInterceptor(self,inpLoc, inpDir, inpGraph, inpIter, inpProbList, inpDiscount):
-        retCoordinates = []
-        if GINPUTTYPE == 1:
-            #print ("nothing value iteration")
-            localValueIteration = valueIteration()
-            retCoordinates = localValueIteration.valIterRoot(inpLoc, inpDir, inpGraph, inpIter, inpProbList, inpDiscount)
-        elif GINPUTTYPE == 2:
-            print ("nothing q learning")
-        elif GINPUTTYPE == 3:
-            print ("nothing approximate q learning")
-
-        return retCoordinates
-
 
     def mainLoop(self):
         gameData = snakeGameComponents()
@@ -89,7 +77,8 @@ def main():
 
     pc = PolicyConfiguration()
     #policy = ValueIteration()
-    policy = PolicyIteration()
+    #policy = PolicyIteration()
+    policy = qLearningAgent()
     policy.config = pc
 
     agent = Agent()
