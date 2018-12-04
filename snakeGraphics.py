@@ -50,7 +50,7 @@ class Master(Canvas):
         self.Food = None
         self.direction = None
         self.current = None
-        # self.score = Scores(boss)
+        self.score = Scores(boss)
 
     def start(self):
         """start snake game"""
@@ -81,6 +81,18 @@ class Master(Canvas):
             self.current = Movement(self, event.keysym)  # a new instance at each turn to avoid confusion/tricking
             self.current.begin()  # program gets tricked if the user presses two arrow keys really quickly
 
+
+
+class Scores:
+    """Objects that keep track of the score and high score"""
+    def __init__(self, boss=None):
+        self.counter = StringVar(boss, '0')
+
+    def increment(self):
+        score = gameData.getScore()
+        #maximum = max(score, int(self.maximum.get()))
+        self.counter.set(str(score))
+        #self.maximum.set(str(maximum))
 
 
 class Shape:
@@ -115,19 +127,10 @@ class Shape:
 class Food(Shape):
     """snake food"""
     def __init__(self, can):
-        """only create the Foods where there is no snake body part"""
         self.can = can
         foodLocation = gameData.getFoodLocation();
         a = PIXEL  * foodLocation[0]
         b = PIXEL  * foodLocation[1]
-        # p = int(GRADUATION/2 - 1)
-        # n, m = randint(0, p), randint(0, p)
-        # a, b = PIXEL * (2 * n + 1), PIXEL * (2 * m + 1)
-        while [a, b] in [[block.x, block.y] for block in self.can.snake.blocks]:
-            #     n, m = randint(0, p), randint(0, p)
-            a = PIXEL + 2 * foodLocation[0]
-            b = PIXEL + 2 * foodLocation[1]
-            a, b = PIXEL * (2 * a + 1), PIXEL * (2 * b + 1)
         super().__init__(can, a, b, OB)
 
 
@@ -143,24 +146,23 @@ class Snake(Shape):
         headLocation = gameData.getHeadLocation();
         a = PIXEL + 2 * headLocation[0]/4 * PIXEL
         b = PIXEL + 2 * headLocation[1]/4 * PIXEL
-        self.blocks = [Block(can, a, a), Block(can, a, a)]
+        self.blocks = [Block(can, a, b)]
 
 
     def move(self, path):
-        #a = (self.blocks[-1].x + STEP * path[0]) % WD
-        #b = (self.blocks[-1].y + STEP * path[1]) % HT
         a = (PIXEL * path[0]) % WD
         b = (PIXEL * path[1]) % HT
         if a == self.can.Food.x and b == self.can.Food.y:  # check if we find food
-        #     self.can.score.increment()
+             self.can.score.increment()
              self.can.Food.delete()
-        #     self.blocks.append(Block(self.can, a, b))
+             self.blocks.append(Block(self.can, a, b))
              self.can.Food = Food(self.can)
         # #elif [a, b] in [[block.x, block.y] for block in self.blocks]:  # check if we hit a body part
         #     #self.can.clean()
         # else:
         # tab them -----
         self.blocks[0].modify(a, b)
+        #self.blocks[1].modify(a,b)
         self.blocks = self.blocks[1:] + [self.blocks[0]]
 
 
@@ -173,15 +175,12 @@ class Movement:
 
     def begin(self):
         if self.flag > 0:
-            x = gameData.getScore()
-            print(x)
             if not gameData.getGameEnd():
                 gameData.gameLogicIteration(DIRECTIONS[self.direction][0],DIRECTIONS[self.direction][1]);
                 self.can.snake.move(gameData.getHeadLocation())
                 self.can.after(REFRESH_TIME, self.begin)
             else:
                 self.flag = 0;
-
 
 
     def stop(self):
@@ -196,6 +195,11 @@ game.grid(column=1, row=0, rowspan=4)
 buttons = Frame(root, width=35, height=3*HT/5)
 Button(buttons, text='Start', command=game.start).grid()
 Button(buttons, text='Stop', command=game.clean).grid()
-#Button(buttons, text='Quit', command=root.destroy).grid()
 buttons.grid(column=0, row=0)
+scoreboard = Frame(root, width=35, height=2*HT/5)
+Label(scoreboard, text='Game Score').grid()
+Label(scoreboard, textvariable=game.score.counter).grid()
+scoreboard.grid(column=0, row=2)
+#Button(buttons, text='Quit', command=root.destroy).grid()
+
 root.mainloop()
