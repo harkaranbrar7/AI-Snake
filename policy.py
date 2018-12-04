@@ -77,30 +77,37 @@ class Policy(ABC):
     def directionToLocation(self, inpLoc, inpDirection):
         retLocation = [x + y for x, y in zip(inpLoc, inpDirection)]
         return retLocation
+        
+    def listToTuple():
+        return retTuple
 
     def absDirToShort(self, inpDir):
         retShort = None
-        if inpDir == self._config.rawMovmentValue["NORTH"]:
+        
+        inpDir = tuple(inpDir)
+        
+        if inpDir == self._config.rawMovementValue["NORTH"]:
             retShort = self._config.movementsShortValue["NORTH"]
-        elif inpDir == self._config.rawMovmentValue["EAST"]:
+        elif inpDir == self._config.rawMovementValue["EAST"]:
             retShort = self._config.movementsShortValue["EAST"]
-        elif inpDir == self._config.rawMovmentValue["SOUTH"]:
+        elif inpDir == self._config.rawMovementValue["SOUTH"]:
             retShort = self._config.movementsShortValue["SOUTH"]
-        elif inpDir == self._config.rawMovmentValue["WEST"]:
+        elif inpDir == self._config.rawMovementValue["WEST"]:
             retShort = self._config.movementsShortValue["WEST"]
+        
         return retShort
 
 
     def shortToAbsDir(self, inpShort):
         retDir = None
         if inpShort == self._config.movementsShortValue["NORTH"]:
-            retDir = self._config.rawMovmentValue["NORTH"]
+            retDir = self._config.rawMovementValue["NORTH"]
         elif inpShort == self._config.movementsShortValue["EAST"]:
-            retDir = self._config.rawMovmentValue["EAST"]
+            retDir = self._config.rawMovementValue["EAST"]
         elif inpShort == self._config.movementsShortValue["SOUTH"]:
-            retDir = self._config.rawMovmentValue["SOUTH"]
+            retDir = self._config.rawMovementValue["SOUTH"]
         elif inpShort == self._config.movementsShortValue["WEST"]:
-            retDir = self._config.rawMovmentValue["WEST"]
+            retDir = self._config.rawMovementValue["WEST"]
         return retDir
 
     def rewardValue(self, gamestate):
