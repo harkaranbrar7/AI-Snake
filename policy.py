@@ -2,8 +2,9 @@
 #   ----------
 #   Abstract Class
 #
-from enumerations import Enumerations
+
 from abc import ABC, abstractmethod
+import random
 
 
 class Policy(ABC):
@@ -28,23 +29,30 @@ class Policy(ABC):
         pass
 
     ##
+    #   Accessor Method For Instance Variable: self.config
+    #
+    @property
+    @abstractmethod
+    def config(self):
+        return
+
+    ##
+    #   Mutator Method For Instance Variable: self.config
+    #
+    @config.setter
+    @abstractmethod
+    def config(self, config):
+        pass
+
+    ##
     #   Determines the best move given the current gamestate
     #   @param location a tuple representing a location in the game
     #   @return the recommended move
     #
     @abstractmethod
-    def best_move(self, location):
+    def best_move(self, gamestate):
         pass
 
-    ##
-    #   Accessor Method For Instance Variable: location
-    #   location is a dictionary containing tuples of the form (location, value, best move)
-    #   return self.location
-    #
-    @property
-    @abstractmethod
-    def location(self):
-        pass
 
     ##
     #   Returns the current policy
@@ -53,3 +61,67 @@ class Policy(ABC):
     @abstractmethod
     def policy(self):
         pass
+
+    ##
+    # Converts Relative Directions to Absolute Directions
+    # @param prior_absolution_direction The (absolute) direction last taken
+    # @param relative_direction the relative direction to be converted into absolute
+    # @return the new absolute direction
+
+    def relativeToAbsoluteDirection(self, prior_absolute_direction, relative_direction):
+        direction_index = self._config.actions[relative_direction] - 1
+        retDirection = self.shortToAbsDir((self.absDirToShort(prior_absolute_direction) + direction_index) % 4)
+        return retDirection
+
+
+    def directionToLocation(self, inpLoc, inpDirection):
+        retLocation = [x + y for x, y in zip(inpLoc, inpDirection)]
+        return retLocation
+
+    def absDirToShort(self, inpDir):
+        retShort = None
+        if inpDir == self._config.rawMovmentValue["NORTH"]:
+            retShort = self._config.movementsShortValue["NORTH"]
+        elif inpDir == self._config.rawMovmentValue["EAST"]:
+            retShort = self._config.movementsShortValue["EAST"]
+        elif inpDir == self._config.rawMovmentValue["SOUTH"]:
+            retShort = self._config.movementsShortValue["SOUTH"]
+        elif inpDir == self._config.rawMovmentValue["WEST"]:
+            retShort = self._config.movementsShortValue["WEST"]
+        return retShort
+
+
+    def shortToAbsDir(self, inpShort):
+        retDir = None
+        if inpShort == self._config.movementsShortValue["NORTH"]:
+            retDir = self._config.rawMovmentValue["NORTH"]
+        elif inpShort == self._config.movementsShortValue["EAST"]:
+            retDir = self._config.rawMovmentValue["EAST"]
+        elif inpShort == self._config.movementsShortValue["SOUTH"]:
+            retDir = self._config.rawMovmentValue["SOUTH"]
+        elif inpShort == self._config.movementsShortValue["WEST"]:
+            retDir = self._config.rawMovmentValue["WEST"]
+        return retDir
+
+    def rewardValue(self, gamestate):
+        retReward = 0
+        location = gamestate.getHeadLocation()
+        if gamestate.isScoreChange():
+            retReward += self._config.reward.food
+        if gamestate.isHazardSpot(location):
+            retReward += self._config.reward.hazard
+        retReward += self._config.reward.living
+        return retReward
+        
+    def moveScrambler(self, inpRelativeDirection):
+        probabilityTotal = 0
+        for direction in self._config.stochastic.directions[inpRelativeDirection]:
+            probabilityTotal += self._config.stochastic.directions[inpRelativeDirection][direction]
+        randomValue = random.random()*(probabilityTotal)
+        probabilitySegment = 0
+        for direction in self._config.stochastic.directions[inpRelativeDirection]:
+            tempValue = self._config.stochastic.directions[inpRelativeDirection][direction]
+            if randomValue >= probabilitySegment and randomValue < probabilitySegment + tempValue:
+                return direction
+            probabilitySegment += tempValue
+        return list(self._config.stochastic.directions.keys())[0]
