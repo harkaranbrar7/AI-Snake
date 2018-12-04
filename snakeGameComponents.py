@@ -1,4 +1,7 @@
+from tkinter import *
 import random
+
+
 
 class cartesianLocation:
     def __init__(self, x = None, y = None):
