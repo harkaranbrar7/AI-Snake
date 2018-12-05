@@ -25,7 +25,7 @@ class ValueIteration(Policy):
 
     def best_move(self, gamestate):
     
-        bestMove = self.policy_extraction(gamestate, 4)
+        bestMove = self.policy_extraction(gamestate, int(len(gamestate.gGraph)/2 + 1))
         scrambledMove = self.moveScrambler(bestMove)
         returnDirection = self.relativeToAbsoluteDirection(
                     gamestate.getAbsoluteHeadDirection(),
@@ -69,6 +69,7 @@ class ValueIteration(Policy):
         self._gamestate = gamestate
 
 
+    #what is the value of the current state and action
     def value_iteration_action_value(self, gamestate, iteration, action):
 
         if iteration <= 0:
@@ -101,7 +102,8 @@ class ValueIteration(Policy):
             localProbTotal += probability
         localReward /= localProbTotal # Normalization
         return localReward
-        
+
+    #what actions can be taken from the current game state
     def value_iteration_explore(self, gamestate, iteration):
 
         if iteration <= 0:
@@ -119,7 +121,7 @@ class ValueIteration(Policy):
 
         return highest_reward
 
-
+    #determine the policy based on the action values
     def policy_extraction(self, gamestate, iteration):
         if iteration <= 0:
             return None
