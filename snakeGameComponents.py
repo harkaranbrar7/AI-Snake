@@ -2,7 +2,7 @@ from tkinter import *
 import random
 
 
-
+#location object
 class cartesianLocation:
     def __init__(self, x = None, y = None):
         self.x = x
@@ -24,6 +24,7 @@ class cartesianLocation:
     def __ne__(self, inpLocation):
         return (self.x != inpLocation.x or self.y != inpLocation.y)
 
+#head object
 class snakeHead:
     def __init__(self, inpLocation, inpOrientation):
         self.location = inpLocation
@@ -33,7 +34,7 @@ class snakeHead:
         retObject = snakeHead(self.location.copyNew(), self.direction.copyNew())
         retObject.dead = self.dead
         return retObject
-
+#tail joint object
 class snakeTailJoint:
     def __init__(self, inpLocation, inpOrientation):
         self.location = inpLocation
@@ -42,6 +43,7 @@ class snakeTailJoint:
         retObject = snakeTailJoint(self.location.copyNew(), self.direction.copyNew())
         return retObject
 
+#food object
 class food:
     def __init__(self, inpLocation):
         self.location = inpLocation
@@ -51,6 +53,7 @@ class food:
         retObject.dead = self.dead
         return retObject
 
+#wall object
 class wall:
     def __init__(self, inpLocation):
         self.location = inpLocation
@@ -58,6 +61,7 @@ class wall:
         retObject = wall(self.location.copyNew())
         return retObject
 
+#graph element object
 class graphPoint:
     def __init__(self):
         self.wall = False
@@ -78,6 +82,8 @@ class graphPoint:
     def isEmpty(self):
         return (self.wall == False and self.food == False and self.tail == False and self.head == False)
 
+#components of game object
+    #i.e. the rules of the game
 class snakeGameComponents:
     gHead = None
     gTailList = None
@@ -89,18 +95,24 @@ class snakeGameComponents:
     gGameDone = None
     GSCOREINCREASEVALUE = 1
 
+    #correct location if out of bounds
     def outOfBoundsCorrection(self, inpLocation, inpGraphBounds):
         retLocation = inpLocation
-        if (retLocation.x > inpGraphBounds - 1):
-            retLocation.x = 0
-        if (retLocation.y > inpGraphBounds - 1):
-            retLocation.y = 0
-        if (retLocation.x < 0):
-            retLocation.x = inpGraphBounds - 1
-        if (retLocation.y < 0):
-            retLocation.y = inpGraphBounds - 1
+        while (retLocation.x > inpGraphBounds - 1):
+            #retLocation.x = 0
+            retLocation.x -= inpGraphBounds
+        while (retLocation.y > inpGraphBounds - 1):
+            #retLocation.y = 0
+            retLocation.y -= inpGraphBounds
+        while (retLocation.x < 0):
+            #retLocation.x = inpGraphBounds - 1
+            retLocation.x += inpGraphBounds
+        while (retLocation.y < 0):
+            #retLocation.y = inpGraphBounds - 1
+            retLocation.y += inpGraphBounds
         return retLocation
 
+    #move the head
     def moveHead (self, inpHead, inpDirection, inpGraphBounds):
 
         if inpDirection.x > 0:
@@ -127,10 +139,12 @@ class snakeGameComponents:
             inpTailList[0].location.copyValue(inpHead.location)
             inpTailList[0].direction.copyValue(inpHead.direction)
 
+    #move the head and the tail
     def moveSnake(self, inpTailList, inpHead, inpDirection, inpBounds):
         self.moveTail (inpTailList, inpHead)
         self.moveHead (inpHead, inpDirection, inpBounds)
 
+    #add tail joint to the tail
     def growSnake(self, inpTailList, inpHead):
         newTailJoint = None
         newLocation = None
@@ -144,11 +158,13 @@ class snakeGameComponents:
         newTailJoint = snakeTailJoint(newLocation, newDirection)
         inpTailList.append(newTailJoint)
 
+    #increase the score
     def increaseScore(self, inpScore):
         retScore = inpScore
         retScore += self.GSCOREINCREASEVALUE #i.e. 1
         return retScore
 
+    #find a list of empty location
     def findValidLocations (self, inpGraph):
         validLocationList = []
         for i in range(len(inpGraph)):
@@ -157,6 +173,7 @@ class snakeGameComponents:
                     validLocationList.append(cartesianLocation(j,i))
         return validLocationList
 
+    #generate new food location
     def newFoodLocation(self, inpGraph):
         validLocationList = self.findValidLocations(inpGraph)
         foodLocation = None
@@ -166,6 +183,7 @@ class snakeGameComponents:
             foodLocation = cartesianLocation(0, 0)
         return foodLocation
 
+    #run the eating food game logic
     def eatFood(self, inpTailList, inpHead, inpFood, inpGraph):
         self.growSnake(inpTailList, inpHead)
         inpGraph[inpFood.location.y][inpFood.location.x].food = False
@@ -174,27 +192,34 @@ class snakeGameComponents:
         inpFood.location.copyValue(tmpFoodLocation)
         inpFood.dead = False
 
+    #remove the snake components from the graph
     def clearSnake (self, inpGraph, inpHead, inpTailList):
         inpGraph[inpHead.location.y][inpHead.location.x].head = False
         for i in inpTailList:
             inpGraph[i.location.y][i.location.x].tail = False
 
+    #add the snake components to the graph
     def updateGraphSnake (self, inpGraph, inpHead, inpTailList):
         for i in inpTailList:
             inpGraph[i.location.y][i.location.x].tail = True
         inpGraph[inpHead.location.y][inpHead.location.x].head = True
 
+    #add wall components to the graph
     def updateGraphWall (self, inpGraph, inpWallList):
         for i in inpWallList:
             inpGraph[i.location.y][i.location.x].wall = True
 
+    #flag dead if hit wall or tail
     def doDeathCollision(self, inpGraph, inpHead):
         if inpGraph[inpHead.location.y][inpHead.location.x].wall == True or inpGraph[inpHead.location.y][inpHead.location.x].tail == True:
             inpHead.dead = True
+            
+    #flag eaten if hit food and head
     def doFoodCollison(self, inpGraph, inpFood):
         if (inpGraph[inpFood.location.y][inpFood.location.x].head == True):
             inpFood.dead = True
 
+    #debugging to draw graph
     def drawGraph(self, inpGraph):
         for i in range(len(inpGraph)):
             for j in range(len(inpGraph[i])):
@@ -210,7 +235,7 @@ class snakeGameComponents:
                     print(" ", end="", flush=True)
             print("")
 
-
+    #initialize wall list
     def initializeWallData(self, inpGraphSize):
         retWallList = []
         for i in range(inpGraphSize):
@@ -227,6 +252,8 @@ class snakeGameComponents:
             retWallList.append(newWall)
         return retWallList
 
+    #initialize all of the game data
+        #everything is reinitialized
     def initializeGameData(self, inpGraphSize):
         self.gGraph = []
         for i in range(inpGraphSize):
@@ -253,6 +280,8 @@ class snakeGameComponents:
         self.gScore = 0
         self.gGameDone = False
 
+    # do a game move, send in x direction and y direction of movement
+    # i.e. x=0, y=-1 moves 1 spot north
     def gameLogicIteration(self, inpXChange, inpYChange):
         self.gPreviousScore = self.gScore
         self.clearSnake(self.gGraph, self.gHead, self.gTailList)
@@ -267,26 +296,40 @@ class snakeGameComponents:
         if(self.gHead.dead == True):
             self.gGameDone = True
 
+    #get location of the head
+    #[x,y]
     def getHeadLocation(self):
         retLocation = []
         retLocation.append(self.gHead.location.x)
         retLocation.append(self.gHead.location.y)
         return retLocation
+        
+    #get direction of the head
+    #[x,y]
     def getHeadDirection(self):
         retDirection = []
         retDirection.append(self.gHead.direction.x)
         retDirection.append(self.gHead.direction.y)
         return retDirection
+        
+    #get direction of the head
+    #[x,y]
     def getAbsoluteHeadDirection(self):
         retDirection = []
         retDirection.append(self.gHead.direction.x)
         retDirection.append(self.gHead.direction.y)
         return retDirection
+    
+    #get location of the food
+    #[x,y]
     def getFoodLocation(self):
         retLocation = []
         retLocation.append(self.gFood.location.x)
         retLocation.append(self.gFood.location.y)
         return retLocation
+        
+    #get a list of tail locations
+    #[[x,y],...]
     def getTailListLocation(self):
         retLocation = []
         for i in self.gTailList:
@@ -295,6 +338,9 @@ class snakeGameComponents:
             tmpListElement.append(i.location.y)
             retLocation.append(tmpListElement)
         return retLocation
+        
+    #get a list of wall locations
+    #[[x,y],...]
     def getWallListLocation(self):
         retLocation = []
         for i in self.gWallList:
@@ -304,6 +350,8 @@ class snakeGameComponents:
             retLocation.append(tmpListElement)
         return retLocation
 
+    #copys the game data into a new game object
+        #so that it doesn't reference the original object
     def copyGameState(self):
         retGame = snakeGameComponents()
         retGame.gHead = self.gHead.copyObject()
@@ -326,17 +374,30 @@ class snakeGameComponents:
 
         return retGame
 
+    #if location is empty
+    #[x,y]
     def isEmptySpot(self, location):
-        return self.gGraph[location[1]][location[0]].isEmpty()
+        tmpLoc = self.outOfBoundsCorrection(cartesianLocation(location[0], location[1]), len(self.gGraph))
+        return self.gGraph[tmpLoc.x][tmpLoc.y].isEmpty()
+    #if location is a hazard
+    #[x,y]
     def isHazardSpot(self, location):
-        return self.gGraph[location[1]][location[0]].isHazard()
+        tmpLoc = self.outOfBoundsCorrection(cartesianLocation(location[0], location[1]), len(self.gGraph))
+        return self.gGraph[tmpLoc.x][tmpLoc.y].isHazard()
+    #if location is food
+    #[x,y]
     def isRewardSpot(self, location):
-        return self.gGraph[location[1]][location[0]].isReward()
-
+        tmpLoc = self.outOfBoundsCorrection(cartesianLocation(location[0], location[1]), len(self.gGraph))
+        return self.gGraph[tmpLoc.x][tmpLoc.y].isReward()
+        
+    #if the score has changed
     def isScoreChange(self):
         return self.gPreviousScore != self.gScore
-        
+    
+    #get current score
     def getScore(self):
         return self.gScore
+        
+    #get if game is over
     def getGameEnd(self):
         return self.gGameDone

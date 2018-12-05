@@ -73,14 +73,16 @@ class Policy(ABC):
         retDirection = self.shortToAbsDir((self.absDirToShort(prior_absolute_direction) + direction_index) % 4)
         return retDirection
 
-
+    #takes absolute direction [x,y] and turns it into location [x,y]
     def directionToLocation(self, inpLoc, inpDirection):
         retLocation = [x + y for x, y in zip(inpLoc, inpDirection)]
         return retLocation
-        
+
+    #not used
     def listToTuple():
         return retTuple
 
+    #helper function
     def absDirToShort(self, inpDir):
         retShort = None
         
@@ -98,6 +100,7 @@ class Policy(ABC):
         return retShort
 
 
+    #helper function
     def shortToAbsDir(self, inpShort):
         retDir = None
         if inpShort == self._config.movementsShortValue["NORTH"]:
@@ -110,6 +113,7 @@ class Policy(ABC):
             retDir = self._config.rawMovementValue["WEST"]
         return retDir
 
+    #calculate the reward of states
     def rewardValue(self, gamestate):
         retReward = 0
         location = gamestate.getHeadLocation()
@@ -120,6 +124,7 @@ class Policy(ABC):
         retReward += self._config.reward.living
         return retReward
         
+    #scrambles the direction of the action
     def moveScrambler(self, inpRelativeDirection):
         probabilityTotal = 0
         for direction in self._config.stochastic.directions[inpRelativeDirection]:
