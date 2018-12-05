@@ -8,6 +8,7 @@ from approximateQLearning import approximateQLearning
 from policy_configuration import PolicyConfiguration
 from agent import Agent
 
+#control variables are at the end of the document
 class Master(Canvas):
 
     COLORHEAD = "blue"
@@ -216,6 +217,15 @@ class Movement:
         self.agent = Agent()
         pc = None
         policy = None
+        #inpRewards = [food reward, hazard reward, living reward, good location reward, bad location reward]
+            #good and bad location is only used for qlearning
+                #tried to use to cause graph searching
+            #not really used and can give wonky results
+        #inpDiscounts = [gamma discount, alpha discount, epsilon explore chance]
+        #inpStochastic = [forward action[forward chance, left chance, right chance]
+        #left action[forward chance, left chance, right chance]
+        #right action[forward chance, left chance, right chance]]
+        #inpFile file for weight or qvalues
         if self.aiType == 1:
             policy = ValueIteration()
             pc = PolicyConfiguration(inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
@@ -226,10 +236,10 @@ class Movement:
             policy = qLearningAgent()
             #risk aversion aka rarely go off best path seems to work best
             #This one seemed to work #pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
-            pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+            pc = PolicyConfiguration(inpRewards = [2,-1,0,0,0], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]], inpFile = None, inpTrainingLimit = 20000)
         elif self.aiType == 4:
             policy = approximateQLearning()
-            pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+            pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]], inpFile = None, inpTrainingLimit = 5000)
         else:
             policy = ValueIteration()
             pc = PolicyConfiguration()
@@ -261,7 +271,14 @@ class Movement:
 
 root = Tk()
 root.title("Snake Game")
-game = Master(root, 6, 3) #second parameter is world size, third is ai type
+
+#####
+#root is the canvas object
+#second parameter is world size
+#third parameter is ai switch
+game = Master(root, 6, 4) #second parameter is world size, third is ai type
+
+######
 root.bind("<Key>", game.redirect)
 game.grid(column=1, row=0, rowspan=4)
 buttons = Frame(root, width=35, height=3*game.CANVASSIZE/5)

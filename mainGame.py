@@ -7,7 +7,8 @@ from policy_configuration import PolicyConfiguration
 from agent import Agent
 
 
-
+#mostly a display for debugging
+#superceded by snakeGraphics
 class Game:
 
     def __init__(self, inpType = 1, worldSize = 6):
@@ -74,7 +75,7 @@ class Game:
 
 
 def main():
-    aiType = 1
+    aiType = 3
     worldSize = 6
     game = Game(aiType, worldSize)
     
@@ -89,10 +90,10 @@ def main():
         pc = PolicyConfiguration(inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
     elif aiType == 3:
         policy = qLearningAgent()
-        pc = PolicyConfiguration(inpRewards = [0,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
-    elif self.aiType == 4:
+        pc = PolicyConfiguration(inpRewards = [0,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]], inpFile = "QLValues.p", inpTrainingLimit = 1000)
+    elif aiType == 4:
         policy = approximateQLearning()
-        pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+        pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]], inpFile = "AQLWeights.json", inpTrainingLimit = 500)
     else:
         policy = ValueIteration()
         pc = PolicyConfiguration()

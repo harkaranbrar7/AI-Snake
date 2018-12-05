@@ -12,7 +12,7 @@ class qLearningAgent(Policy):
         self._policy_results = {}
         self.gQValues = {}
         self.gTrainingIteration = 0
-        self.gTrainingLimit = 20000
+        self.gTrainingLimit = 0
         self.accumTrainRewards = 0.0
         self.accumTestRewards = 0.0
         self.saveResults = True
@@ -66,6 +66,7 @@ class qLearningAgent(Policy):
         self._config = config
         if self._config.file != None:
             self.loadQValuesFromFile(self._config.file)
+        self.gTrainingLimit = self._config.trainingLimit
         pass
 
     ##
@@ -82,25 +83,24 @@ class qLearningAgent(Policy):
     @reward.setter
     def gamestate(self, gamestate):
         self._gamestate = gamestate
-        
+    
+    #inpFile is the file name
     def loadQValuesFromFile(self, inpFile):
-        #with open(inpFile, 'r') as fp:
-        #    self.gQValues = json.load(fp)
         with open(inpFile, 'rb') as fp:
             self.gQValues = pickle.load(fp)
         return None
         
+    #inpFile is the file name
     def saveQValuesToFile(self, inpFile):
-        #with open(inpFile, 'w') as fp:
-        #    json.dump(self.gQValues, fp, indent=4)
-            
         with open(inpFile, 'wb') as fp:
             pickle.dump(self.gQValues, fp, protocol=pickle.HIGHEST_PROTOCOL)
         return None
     
+    #if spot has not been explored
     def isUnexploredSpot(self, inpState):
         return self.getBestValueFromQValue(inpState) == 0
     
+    #implement rewards
     def rewardQValue(self, inpGameState, inpOldGameState, inpAction):
         retReward = self.rewardValue(inpGameState)
         location = inpGameState.getHeadLocation()
@@ -109,9 +109,8 @@ class qLearningAgent(Policy):
             #if self.isUnexploredSpot(inpGameState):
                 retReward += self._config.reward.goodLocation
         return retReward
-        
-    
-    #not needed
+            
+    #not needed, because now dynamically initialized
     def initQValues(self, gamestate):
         for i in range(len(gamestate.gGraph)):
             for j in range(len(gamestate.gGraph[i])):
@@ -119,8 +118,20 @@ class qLearningAgent(Policy):
                     for actionKey in self._config.actions:
                         self.gQValues[(((j, i), moveValue), actionKey)]
     
+    #takes a long number and shortens it to the bounds of inpDivisor
+    def longToShort(self, inpLong, inpBound, inpDivisor):
+        retShort = int (inpDivisor * inpLong / inpBound )
+        return retShort
+        
+    #shortens the food coordinates
     def simplifyFoodLocation(self, inpFoodLocation, inpSize, inpDivisor):
+        retList = []
+        retList.append(self.longToShort(inpFoodLocation[0], inpSize, inpDivisor))
+        retList.append(self.longToShort(inpFoodLocation[1], inpSize, inpDivisor))
+        """
+        #old code: should be equivalent to the new code
         tempFoodLocation = inpFoodLocation
+        
         tempWorldSize = inpSize
         localQuotient = int(tempWorldSize / inpDivisor)
         localRemainder = tempWorldSize % inpDivisor
@@ -143,9 +154,11 @@ class qLearningAgent(Policy):
                 tempSection += localQuotient
             counter00 += 1
         retList.append(counter00 - 1)
+        """
         return tuple(retList)
         
     
+    #takes a game state and shortens to relevent state information
     def stateToShortState(self, inpState):
         location = tuple(inpState.getHeadLocation())
         direction = tuple(inpState.getHeadDirection())
@@ -195,12 +208,14 @@ class qLearningAgent(Policy):
             action = self.getBestActionFromQValue(state)
         return action
 
+    #updates the qValue
     def update(self, state, action, nextState, reward):
         currentQValue = reward + self._config.discount.gamma * self.getBestValueFromQValue(nextState)
         qvalue = (1-self._config.discount.alpha) * self.getQValue(state,action) + self._config.discount.alpha * currentQValue
         #self.gQValues[(state,action)] = qvalue
         self.setQValue(state, action, qvalue)
 
+    #not used
     def getNextState(self, state, action):
         nextState = state.copyGameState()
         localNewDirection = self.relativeToAbsoluteDirection(
@@ -210,51 +225,22 @@ class qLearningAgent(Policy):
         nextState = possible_gamestate.gameLogicIteration(localNewDirection[0], localNewDirection[1])
         return nextState
         
-    #def doAction(self, state, action)
-        #return None
-    
-    #iterate state
-    #get reward of new state
-    #do observeTransition
-    
-    #determine terminal by if the depth iteration is 0
-    
-    #on game logic iteration
+    #episode rewards is just to overall compare differences in performance scoring
     def observeTransition(self, state,action,nextState,deltaReward):
         """
-            Called by environment to inform agent that a transition has
+            Called to inform agent that a transition has
             been observed. This will result in a call to self.update
             on the same arguments
-
-            NOTE: Do *not* override or call this function
         """
         self.episodeRewards += deltaReward
         self.update(state,action,nextState,deltaReward)
 
     def startEpisode(self):
-        """
-          Called by environment when new episode is starting
-        """
-        #self.lastState = None
-        #self.lastAction = None
         self.episodeRewards = 0.0
 
     def stopEpisode(self):
-        """
-          Called by environment when episode is done
-        """
         self.accumTrainRewards += self.episodeRewards
-        """
-        if self.gTrainingIteration < self.gTrainingLimit:
-            self.accumTrainRewards += self.episodeRewards
-        else:
-            self.accumTestRewards += self.episodeRewards
-        self.gTrainingIteration += 1
-        if self.gTrainingIteration >= self.gTrainingLimit:
-            # Take off the training wheels
-            self.epsilon = 0.0    # no exploration
-            self.alpha = 0.0      # no learning
-        """
+
     def stopEpisodeTest(self):
         self.accumTestRewards += self.episodeRewards
         
@@ -314,14 +300,3 @@ class qLearningAgent(Policy):
     def isInTesting(self):
         return not self.isInTraining()
     
-    #currently not used
-    def observationFunction(self, state):
-        """
-            This is where we ended up after our last action.
-            The simulation should somehow ensure this is called
-        """
-        if not self.lastState is None:
-            reward = state.getScore() - self.lastState.getScore()
-            self.observeTransition(self.lastState, self.lastAction, state, reward)
-        return state
-

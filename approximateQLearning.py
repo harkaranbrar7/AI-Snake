@@ -13,7 +13,7 @@ class approximateQLearning(Policy):
         self.gQValues = {}
         self.weights = {}
         self.gTrainingIteration = 0
-        self.gTrainingLimit = 5000
+        self.gTrainingLimit = 0
         self.accumTrainRewards = 0.0
         self.accumTestRewards = 0.0
         self.saveResults = True
@@ -38,8 +38,6 @@ class approximateQLearning(Policy):
         if self.isInTraining():
             self.runTraining(gamestate.copyGameState(), self.gTrainingLimit)
             input("press enter to continue")
-        #print("end of training")
-        #print(self.gQValues)
         bestMove = self.getBestActionFromQValue(gamestate)
         scrambledMove = self.moveScrambler(bestMove)
         returnDirection = self.relativeToAbsoluteDirection(
@@ -67,6 +65,7 @@ class approximateQLearning(Policy):
         self._config = config
         if self._config.file != None:
             self.loadQValuesFromFile(self._config.file)
+        self.gTrainingLimit = self._config.trainingLimit
         pass
 
     ##
@@ -94,6 +93,7 @@ class approximateQLearning(Policy):
             json.dump(self.weights, fp, sort_keys=True, indent=4)
         return None
     
+    #not used
     def isUnexploredSpot(self, inpState):
         return self.getBestValueFromQValue(inpState) == 0
     
@@ -113,20 +113,12 @@ class approximateQLearning(Policy):
         location = tuple(inpState.getHeadLocation())
         direction = tuple(inpState.getHeadDirection())
         return (location, direction)
-    """
-    def getQValue(self, inpState, inpAction):
-        localState = self.stateToShortState(inpState)
-        qValueIndex = (localState, inpAction)
-        if qValueIndex not in self.gQValues:
-            self.gQValues[qValueIndex] = 0
-        return self.gQValues[qValueIndex]
-    """
+
     def getQValue(self, state, action):
         """
           Should return Q(state,action) = w * featureVector
           where * is the dotProduct operator
         """
-        #return self.getFeatures(state, action) * self.getWeights()
         return self.dotProduct(self.getFeatures(state, action), self.getWeights())
         
     def setQValue(self, inpState, inpAction, inpValue):
@@ -141,8 +133,7 @@ class approximateQLearning(Policy):
         if inpKey not in self.weights:
             self.weights[inpKey] = 0.0
         self.weights[inpKey] += inpValue
-            
-        
+
     def getBestValueFromQValue(self, inpState):
         values = []
         for action in self._config.actions:
@@ -172,20 +163,12 @@ class approximateQLearning(Policy):
         else:
             action = self.getBestActionFromQValue(state)
         return action
-
-    """
-    def update(self, state, action, nextState, reward):
-        currentQValue = reward + self._config.discount.gamma * self.getBestValueFromQValue(nextState)
-        qvalue = (1-self._config.discount.alpha) * self.getQValue(state,action) + self._config.discount.alpha * currentQValue
-        self.setQValue(state, action, qvalue)
-    """
         
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
         #updating the weight vector based on approximate q learning
-        #used assignment equation as a reference
         difference = reward + self._config.discount.gamma * self.getBestValueFromQValue(nextState) - self.getQValue(state, action)
         features = self.getFeatures(state, action)
         for feature, value in features.items():
@@ -193,6 +176,7 @@ class approximateQLearning(Policy):
             tempValue = self._config.discount.alpha * difference * value
             self.incrementWeight(feature, tempValue)
 
+    #not used
     def getNextState(self, state, action):
         nextState = state.copyGameState()
         localNewDirection = self.relativeToAbsoluteDirection(
@@ -202,21 +186,17 @@ class approximateQLearning(Policy):
         nextState = possible_gamestate.gameLogicIteration(localNewDirection[0], localNewDirection[1])
         return nextState
         
+    #episode reward is just for general comparison to see if there is improvement
     def observeTransition(self, state,action,nextState,deltaReward):
         """
-            Called by environment to inform agent that a transition has
+            to inform agent that a transition has
             been observed. This will result in a call to self.update
             on the same arguments
-
-            NOTE: Do *not* override or call this function
         """
         self.episodeRewards += deltaReward
         self.update(state,action,nextState,deltaReward)
 
     def startEpisode(self):
-        """
-          Called by environment when new episode is starting
-        """
         self.episodeRewards = 0.0
 
     def stopEpisode(self):
@@ -259,14 +239,11 @@ class approximateQLearning(Policy):
                 scrambledMove
             )
             localGameState.gameLogicIteration(newDirection[0], newDirection[1])
-            #localDeltaReward = self.reward(localGameState)
             #localDeltaReward = self.rewardQValue(localGameState, oldGameState, newAction)
             localDeltaReward = self.rewardQValue(localGameState)
             self.observeTransition(oldGameState, newAction, localGameState, localDeltaReward)
             #localGameState.drawGraph(localGameState.gGraph)
             terminateCounter += 1
-            #input('press to unpause')
-            #print (terminateCounter)
         if terminateCounter >= terminateLimit:
             print("hit terminate limit")
         return None
@@ -284,24 +261,37 @@ class approximateQLearning(Policy):
     def isInTesting(self):
         return not self.isInTraining()
 
+    #These features have a value that is modified by the weight value
+    #A feature value can be static if present
+    #Or it can be dynamic based on a calculation
     def getFeatures(self, state, action):
         features = {}
         
         features["bias"] = 1.0
-        #if self.isExplicitSafeArea(state.copyGameState(), action):
-        #    features["explicitSafeArea"] = 1.0
-        if self.isImplicitSafeArea(state.copyGameState(), action):
-            features["implicitSafeArea"] = 1.0
-        if self.isTwoStepSafe(state.copyGameState(), action):
-            features["twoStepSafe"] = 1.0
-        features["foodDistance"] = self.getFoodDistance(state.copyGameState())
+        #tempValue = self.isExplicitSafeArea(state.copyGameState(), action)
+        #if tempValue > 0:
+        #    features["explicitSafeArea"] = tempValue
+        #tempValue = self.isImplicitSafeArea(state.copyGameState(), action)
+        #if tempValue > 0:
+        #    features["implicitSafeArea"] = tempValue
+        tempValue = self.isSafeRoute(state.copyGameState(), action)
+        if tempValue > 0:
+            features["safeRoute"] = tempValue
+        tempValue = self.isTwoStepSafe(state.copyGameState(), action)
+        if tempValue > 0:
+            features["twoStepSafe"] = tempValue
+            
+        #gets snake to divebomb for food
+        #features["foodDistance"] = self.getFoodDistance(state.copyGameState())
+        
         if self.getIsHazard(state.copyGameState(), action):
             features["actionIsHazard"] = 1.0
         if self.getIsFood(state.copyGameState(), action):
             features["actionIsFood"] = 1.0
-        if not self.getIsHazard(state.copyGameState(), action):
-            features["actionIsSafe"] = 1.0
-            
+        #if not self.getIsHazard(state.copyGameState(), action):
+        #    features["actionIsSafe"] = 1.0
+
+        #keep feature values less than 1
         for key in features:
             features[key] /= 10.0
         
@@ -319,6 +309,7 @@ class approximateQLearning(Policy):
             retLoc.append(inpLoc1[i]-inpLoc2[i])
         return tuple(retLoc)
         
+    #check if four coordinates in a square are not hazards
     def isExplicitSafeArea(self, inpGameState, inpAction):
         localGameState = inpGameState.copyGameState()
        
@@ -359,18 +350,20 @@ class approximateQLearning(Policy):
         farLeftLocation = self.addCoordinates(self.addCoordinates(forwardDirection, farLeft), currentLocation)
         farRightLocation = self.addCoordinates(self.addCoordinates(forwardDirection, farRight), currentLocation)
         
-        isSafe = False
+        isSafe = 0
         if not localGameState.isHazardSpot(actionLocation) and not localGameState.isHazardSpot(forwardLocation):
             if not localGameState.isHazardSpot(nearLeftLocation) and not localGameState.isHazardSpot(farLeftLocation):
-                isSafe = True
+                isSafe += 0.5
             if not localGameState.isHazardSpot(nearRightLocation) and not localGameState.isHazardSpot(farRightLocation):
-                isSafe = True
+                isSafe += 0.5
                 
-        isSafe = True
-                
+        return isSafe
+    
+    #check if four coordinates in a square are not hazards: variation
     def isImplicitSafeArea(self, inpGameState, inpAction):
-        isSafe = True
+        isSafe = 0
         
+        straightSafe = True
         localGameState = inpGameState.copyGameState()
         directionOfAction = self.relativeToAbsoluteDirection(
                     localGameState.getAbsoluteHeadDirection(),
@@ -378,7 +371,7 @@ class approximateQLearning(Policy):
                 )
         localGameState.gameLogicIteration(directionOfAction[0], directionOfAction[1])
         if localGameState.isHazardSpot(localGameState.getHeadLocation()):
-            isSafe = False
+            straightSafe = False
         
         forwardGameState = localGameState.copyGameState()
         forwardDirection = self.relativeToAbsoluteDirection(
@@ -387,32 +380,34 @@ class approximateQLearning(Policy):
                 )
         forwardGameState.gameLogicIteration(forwardDirection[0], forwardDirection[1])
         if forwardGameState.isHazardSpot(forwardGameState.getHeadLocation()):
-            isSafe = False
+            straightSafe = False
         
-        tempSafeCheck = True
-        
-        #check if left is clear
-        tempGameState = localGameState.copyGameState()
-        tempDirection = self.relativeToAbsoluteDirection(
-                    tempGameState.getAbsoluteHeadDirection(),
-                    "LEFT"
-                )
-        tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
-        if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
-            tempSafeCheck = False
+        if straightSafe:
             
-        tempGameState = forwardGameState.copyGameState()
-        tempDirection = self.relativeToAbsoluteDirection(
-                    tempGameState.getAbsoluteHeadDirection(),
-                    "LEFT"
-                )
-        
-        tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
-        if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
-            tempSafeCheck = False
-        
-        #if not check if right is clear
-        if not tempSafeCheck:
+            leftCheck = 0.5
+            
+            #check if left is clear
+            tempGameState = localGameState.copyGameState()
+            tempDirection = self.relativeToAbsoluteDirection(
+                        tempGameState.getAbsoluteHeadDirection(),
+                        "LEFT"
+                    )
+            tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
+            if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
+                leftCheck = 0
+                
+            tempGameState = forwardGameState.copyGameState()
+            tempDirection = self.relativeToAbsoluteDirection(
+                        tempGameState.getAbsoluteHeadDirection(),
+                        "LEFT"
+                    )
+            
+            tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
+            if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
+                leftCheck = 0
+            
+            #check if right is clear
+            rightCheck = 0.5
             tempGameState = localGameState.copyGameState()
             tempDirection = self.relativeToAbsoluteDirection(
                         tempGameState.getAbsoluteHeadDirection(),
@@ -420,7 +415,7 @@ class approximateQLearning(Policy):
                     )
             tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
             if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
-                isSafe = False
+                rightCheck = 0
                 
             tempGameState = forwardGameState.copyGameState()
             tempDirection = self.relativeToAbsoluteDirection(
@@ -430,12 +425,85 @@ class approximateQLearning(Policy):
             
             tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
             if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
-                isSafe = False
+                rightCheck = 0
+                
+            isSafe = leftCheck + rightCheck
 
         return isSafe
+    
+    #check if four coordinates in a square are not hazards: variation
+    def isSafeRoute(self, inpGameState, inpAction):
+        isSafe = 0
         
+        straightSafe = True
+        forwardGameState = inpGameState.copyGameState()
+        forwardDirection = self.relativeToAbsoluteDirection(
+                    forwardGameState.getAbsoluteHeadDirection(),
+                    inpAction
+                )
+        forwardGameState.gameLogicIteration(forwardDirection[0], forwardDirection[1])
+        if forwardGameState.isHazardSpot(forwardGameState.getHeadLocation()):
+            straightSafe = False
+        
+        forwardDirection = self.relativeToAbsoluteDirection(
+                    forwardGameState.getAbsoluteHeadDirection(),
+                    "FORWARD"
+                )
+        forwardGameState.gameLogicIteration(forwardDirection[0], forwardDirection[1])
+        if forwardGameState.isHazardSpot(forwardGameState.getHeadLocation()):
+            straightSafe = False
+        
+        if straightSafe:
+            
+            leftCheck = 0.5
+            
+            #check if left is clear
+            tempGameState = forwardGameState.copyGameState()
+            tempDirection = self.relativeToAbsoluteDirection(
+                        tempGameState.getAbsoluteHeadDirection(),
+                        "LEFT"
+                    )
+            tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
+            if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
+                leftCheck = 0
+                
+            tempDirection = self.relativeToAbsoluteDirection(
+                        tempGameState.getAbsoluteHeadDirection(),
+                        "FORWARD"
+                    )
+            
+            tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
+            if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
+                leftCheck = 0
+            
+            #check if right is clear
+            rightCheck = 0.5
+            tempGameState = forwardGameState.copyGameState()
+            tempDirection = self.relativeToAbsoluteDirection(
+                        tempGameState.getAbsoluteHeadDirection(),
+                        "RIGHT"
+                    )
+            tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
+            if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
+                rightCheck = 0
+                
+            tempDirection = self.relativeToAbsoluteDirection(
+                        tempGameState.getAbsoluteHeadDirection(),
+                        "FORWARD"
+                    )
+            
+            tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
+            if tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
+                rightCheck = 0
+                
+            isSafe = leftCheck + rightCheck
+
+        return isSafe
+
+    #if the action and the action after are safe
+        #doesn't matter which action after
     def isTwoStepSafe(self, inpGameState, inpAction):
-        isSafe = False
+        isSafe = 0
         tmpSafe = True
         localGameState = inpGameState.copyGameState()
         directionOfAction = self.relativeToAbsoluteDirection(
@@ -447,7 +515,7 @@ class approximateQLearning(Policy):
             tmpSafe = False
         
         if (tmpSafe):
-            isSafe = False
+            isSafe = 0
             forwardGameState = localGameState.copyGameState()
             forwardDirection = self.relativeToAbsoluteDirection(
                         forwardGameState.getAbsoluteHeadDirection(),
@@ -455,7 +523,7 @@ class approximateQLearning(Policy):
                     )
             forwardGameState.gameLogicIteration(forwardDirection[0], forwardDirection[1])
             if not forwardGameState.isHazardSpot(forwardGameState.getHeadLocation()):
-                isSafe = True
+                isSafe += (1.0/3.0)
             
             #check if left is clear
             tempGameState = localGameState.copyGameState()
@@ -465,7 +533,7 @@ class approximateQLearning(Policy):
                     )
             tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
             if not tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
-                isSafe = True
+                isSafe += (1.0/3.0)
                 
             #if not check if right is clear
             tempGameState = localGameState.copyGameState()
@@ -475,10 +543,11 @@ class approximateQLearning(Policy):
                     )
             tempGameState.gameLogicIteration(tempDirection[0], tempDirection[1])
             if not tempGameState.isHazardSpot(tempGameState.getHeadLocation()):
-                isSafe = True
+                isSafe += (1.0/3.0)
 
         return isSafe
 
+    #get distance to food
     def getFoodDistance(self, state):
         localGameState = state.copyGameState()
         currentLocation = localGameState.getHeadLocation()
@@ -486,7 +555,8 @@ class approximateQLearning(Policy):
         locationDifference = self.subCoordinates(currentLocation, foodLocation)
         #return abs(locationDifference[0]) + abs(locationDifference[1])
         return (abs(locationDifference[0]) + abs(locationDifference[1])) / (len(localGameState.gGraph) * 2)
-        
+
+    #if action leads to hazard
     def getIsHazard(self, state, inpAction):
         localGameState = state.copyGameState()
         directionOfAction = self.relativeToAbsoluteDirection(
@@ -496,6 +566,7 @@ class approximateQLearning(Policy):
         localGameState.gameLogicIteration(directionOfAction[0], directionOfAction[1])
         return localGameState.isHazardSpot(localGameState.getHeadLocation())
     
+    #if action leads to food
     def getIsFood(self, state, inpAction):
         localGameState = state.copyGameState()
         directionOfAction = self.relativeToAbsoluteDirection(
