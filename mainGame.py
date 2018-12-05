@@ -1,18 +1,19 @@
 from snakeGameComponents import snakeGameComponents
 from value_iteration import ValueIteration
 from policy_iteration import PolicyIteration
-from policy_configuration import PolicyConfiguration
 from qLearning import qLearningAgent
+from approximateQLearning import approximateQLearning
+from policy_configuration import PolicyConfiguration
 from agent import Agent
 
 
 
 class Game:
 
-    def __init__(self):
+    def __init__(self, inpType = 1, worldSize = 6):
         self.agent = None
-        self.GINPUTTYPE = 1
-        self.GWORLDSIZE = 6
+        self.GINPUTTYPE = inpType
+        self.GWORLDSIZE = worldSize
         self.GVISUALIZE = True
         self.GGATHERREWARD = False
         self.gPreviousScore = None
@@ -73,18 +74,34 @@ class Game:
 
 
 def main():
-    game = Game()
-
-    pc = PolicyConfiguration()
-    #policy = ValueIteration()
-    #policy = PolicyIteration()
-    policy = qLearningAgent()
-    policy.config = pc
-
+    aiType = 1
+    worldSize = 6
+    game = Game(aiType, worldSize)
+    
     agent = Agent()
+    pc = None
+    policy = None
+    if aiType == 1:
+        policy = ValueIteration()
+        pc = PolicyConfiguration(inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+    elif aiType == 2:
+        policy = PolicyIteration()
+        pc = PolicyConfiguration(inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+    elif aiType == 3:
+        policy = qLearningAgent()
+        pc = PolicyConfiguration(inpRewards = [0,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+    elif self.aiType == 4:
+        policy = approximateQLearning()
+        pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+    else:
+        policy = ValueIteration()
+        pc = PolicyConfiguration()
+    policy.config = pc
+        
     agent.policy = policy
-
+    
     game.agent = agent
+    
     game.mainLoop()
 
 

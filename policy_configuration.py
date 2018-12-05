@@ -21,10 +21,11 @@ class PolicyConfiguration:
         "WEST": (-1,0)
     }
 
-    def __init__(self, inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]]):
+    def __init__(self, inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]], inpFile = None):
         self.reward = Reward(inpRewards[0], inpRewards[1], inpRewards[2], inpRewards[3], inpRewards[4])
         self.discount = Discount(inpDiscounts[0], inpDiscounts[1], inpDiscounts[2])
         self.stochastic = Stochastic(inpStochastic[0], inpStochastic[1], inpStochastic[2])
+        self.file = inpFile
 
 class Reward:
     def __init__(self, inpFood = 1, inpHazard = -1, inpLiving = 0, inpGoodLoc = 10, inpBadLoc = -1):

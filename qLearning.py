@@ -1,6 +1,8 @@
 from policy import Policy
 from policy_configuration import PolicyConfiguration
 import random, time
+import json
+import pickle
 
 class qLearningAgent(Policy):
 
@@ -13,6 +15,8 @@ class qLearningAgent(Policy):
         self.gTrainingLimit = 20000
         self.accumTrainRewards = 0.0
         self.accumTestRewards = 0.0
+        self.saveResults = True
+        self.saveFile = "QLValues.p"
         pass
     
     @property
@@ -32,6 +36,7 @@ class qLearningAgent(Policy):
     
         if self.isInTraining():
             self.runTraining(gamestate.copyGameState(), self.gTrainingLimit)
+            input("press enter to continue")
         #print("end of training")
         #print(self.gQValues)
         bestMove = self.getBestActionFromQValue(gamestate)
@@ -59,6 +64,8 @@ class qLearningAgent(Policy):
     @config.setter
     def config(self, config):
         self._config = config
+        if self._config.file != None:
+            self.loadQValuesFromFile(self._config.file)
         pass
 
     ##
@@ -75,6 +82,21 @@ class qLearningAgent(Policy):
     @reward.setter
     def gamestate(self, gamestate):
         self._gamestate = gamestate
+        
+    def loadQValuesFromFile(self, inpFile):
+        #with open(inpFile, 'r') as fp:
+        #    self.gQValues = json.load(fp)
+        with open(inpFile, 'rb') as fp:
+            self.gQValues = pickle.load(fp)
+        return None
+        
+    def saveQValuesToFile(self, inpFile):
+        #with open(inpFile, 'w') as fp:
+        #    json.dump(self.gQValues, fp, indent=4)
+            
+        with open(inpFile, 'wb') as fp:
+            pickle.dump(self.gQValues, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        return None
     
     def isUnexploredSpot(self, inpState):
         return self.getBestValueFromQValue(inpState) == 0
@@ -82,9 +104,9 @@ class qLearningAgent(Policy):
     def rewardQValue(self, inpGameState, inpOldGameState, inpAction):
         retReward = self.rewardValue(inpGameState)
         location = inpGameState.getHeadLocation()
-        #if not inpGameState.isHazardSpot(location):
-        if self.getQValue(inpOldGameState, inpAction) == 0:
-            if self.isUnexploredSpot(inpGameState):
+        if not inpGameState.isHazardSpot(location):
+            if self.getQValue(inpOldGameState, inpAction) == 0:
+            #if self.isUnexploredSpot(inpGameState):
                 retReward += self._config.reward.goodLocation
         return retReward
         
@@ -97,10 +119,38 @@ class qLearningAgent(Policy):
                     for actionKey in self._config.actions:
                         self.gQValues[(((j, i), moveValue), actionKey)]
     
+    def simplifyFoodLocation(self, inpFoodLocation, inpSize, inpDivisor):
+        tempFoodLocation = inpFoodLocation
+        tempWorldSize = inpSize
+        localQuotient = int(tempWorldSize / inpDivisor)
+        localRemainder = tempWorldSize % inpDivisor
+        counter00 = 0
+        tempSection = 0
+        while (tempFoodLocation[0] >= tempSection):
+            if (counter00 < localRemainder):
+                tempSection += (localQuotient + 1)
+            else:
+                tempSection += localQuotient
+            counter00 += 1
+        retList = []
+        retList.append(counter00 - 1)
+        counter00 = 0
+        tempSection = 0
+        while (tempFoodLocation[1] >= tempSection):
+            if (counter00 < localRemainder):
+                tempSection += (localQuotient + 1)
+            else:
+                tempSection += localQuotient
+            counter00 += 1
+        retList.append(counter00 - 1)
+        return tuple(retList)
+        
+    
     def stateToShortState(self, inpState):
         location = tuple(inpState.getHeadLocation())
         direction = tuple(inpState.getHeadDirection())
-        return (location, direction)
+        simpleFoodLocation = tuple(self.simplifyFoodLocation(inpState.getFoodLocation(), len(inpState.gGraph), 2))
+        return (location, direction, simpleFoodLocation)
     
     def getQValue(self, inpState, inpAction):
         localState = self.stateToShortState(inpState)
@@ -222,6 +272,8 @@ class qLearningAgent(Policy):
             if i % 100 == 0:
                 print ("training iteration ", i, " of ", inpIterations)
         self.stopTraining()
+        if self.saveResults:
+            self.saveQValuesToFile(self.saveFile)
                 
         return None
         

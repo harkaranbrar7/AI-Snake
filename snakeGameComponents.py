@@ -91,14 +91,18 @@ class snakeGameComponents:
 
     def outOfBoundsCorrection(self, inpLocation, inpGraphBounds):
         retLocation = inpLocation
-        if (retLocation.x > inpGraphBounds - 1):
-            retLocation.x = 0
-        if (retLocation.y > inpGraphBounds - 1):
-            retLocation.y = 0
-        if (retLocation.x < 0):
-            retLocation.x = inpGraphBounds - 1
-        if (retLocation.y < 0):
-            retLocation.y = inpGraphBounds - 1
+        while (retLocation.x > inpGraphBounds - 1):
+            #retLocation.x = 0
+            retLocation.x -= inpGraphBounds
+        while (retLocation.y > inpGraphBounds - 1):
+            #retLocation.y = 0
+            retLocation.y -= inpGraphBounds
+        while (retLocation.x < 0):
+            #retLocation.x = inpGraphBounds - 1
+            retLocation.x += inpGraphBounds
+        while (retLocation.y < 0):
+            #retLocation.y = inpGraphBounds - 1
+            retLocation.y += inpGraphBounds
         return retLocation
 
     def moveHead (self, inpHead, inpDirection, inpGraphBounds):
@@ -327,11 +331,14 @@ class snakeGameComponents:
         return retGame
 
     def isEmptySpot(self, location):
-        return self.gGraph[location[1]][location[0]].isEmpty()
+        tmpLoc = self.outOfBoundsCorrection(cartesianLocation(location[0], location[1]), len(self.gGraph))
+        return self.gGraph[tmpLoc.x][tmpLoc.y].isEmpty()
     def isHazardSpot(self, location):
-        return self.gGraph[location[1]][location[0]].isHazard()
+        tmpLoc = self.outOfBoundsCorrection(cartesianLocation(location[0], location[1]), len(self.gGraph))
+        return self.gGraph[tmpLoc.x][tmpLoc.y].isHazard()
     def isRewardSpot(self, location):
-        return self.gGraph[location[1]][location[0]].isReward()
+        tmpLoc = self.outOfBoundsCorrection(cartesianLocation(location[0], location[1]), len(self.gGraph))
+        return self.gGraph[tmpLoc.x][tmpLoc.y].isReward()
 
     def isScoreChange(self):
         return self.gPreviousScore != self.gScore

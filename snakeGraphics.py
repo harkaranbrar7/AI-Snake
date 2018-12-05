@@ -3,6 +3,8 @@ from snakeGameComponents import*
 from random import randint
 from value_iteration import ValueIteration
 from policy_iteration import PolicyIteration
+from qLearning import qLearningAgent
+from approximateQLearning import approximateQLearning
 from policy_configuration import PolicyConfiguration
 from agent import Agent
 
@@ -212,16 +214,25 @@ class Movement:
         self.direction = direction
         self.aiType = inpAIType
         self.agent = Agent()
-        pc = PolicyConfiguration()
+        pc = None
         policy = None
         if self.aiType == 1:
             policy = ValueIteration()
+            pc = PolicyConfiguration(inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
         elif self.aiType == 2:
             policy = PolicyIteration()
+            pc = PolicyConfiguration(inpRewards = [1,-1,0,10,-1], inpDiscounts = [1,.1,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
         elif self.aiType == 3:
             policy = qLearningAgent()
+            #risk aversion aka rarely go off best path seems to work best
+            #This one seemed to work #pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+            pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
+        elif self.aiType == 4:
+            policy = approximateQLearning()
+            pc = PolicyConfiguration(inpRewards = [2,-1,0,0,-1], inpDiscounts = [0.9,.2,.1], inpStochastic = [[100,0,0],[0,100,0],[0,0,100]])
         else:
             policy = ValueIteration()
+            pc = PolicyConfiguration()
         policy.config = pc
             
         self.agent.policy = policy
@@ -250,7 +261,7 @@ class Movement:
 
 root = Tk()
 root.title("Snake Game")
-game = Master(root, 6, 1)
+game = Master(root, 6, 3) #second parameter is world size, third is ai type
 root.bind("<Key>", game.redirect)
 game.grid(column=1, row=0, rowspan=4)
 buttons = Frame(root, width=35, height=3*game.CANVASSIZE/5)
